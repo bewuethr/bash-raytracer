@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# Global variables
+init_globals () {
+    # Image dimensions
+    img_w=$(tput cols)
+    img_h=$(tput lines)
+
+    # Field of view in degrees
+    local fov=90
+
+    # Aspect ratio takes non-square pixel shape into account
+    img_ar=$(bc -l <<< "scale=3; ($img_w / 2) / $img_h")
+
+    # Scale for field of view; pi is 4 * atan(1)
+    scale=$(bc -l <<< "scale=3; x = $fov * 2 * a(1) / 180; s(x)/c(x)")
+}
+
+# Transform x,y raster coordinates to camera coordinates
+raster_to_camera () {
+    local x=$1
+    local y=$2
+
+    x=$(bc -l <<< "scale=3; (2 * ($x + 0.5) / $img_w - 1) * $img_ar * $scale")
+    y=$(bc -l <<< "scale=3; 1 - 2 * ($y + 0.5) / $img_h * $scale")
+
+    echo "$x $y"
+}
+
+init_globals
+
+for (( i = 0; i < img_h; ++i )); do
+    for (( j = 0; j < img_w; ++j )); do
+        cam_cords=($(raster_to_camera $j $i))
+        echo "${cam_cords[@]}"
+    done
+done
