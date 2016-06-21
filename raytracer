@@ -1,4 +1,5 @@
 #!/bin/bash
+set -u
 
 # Global variables
 init_globals () {
@@ -33,6 +34,12 @@ vec_matrix_mult () {
     echo "${v_res[@]}"
 }
 
+dot_product () {
+    local v1=($1 $2 $3)
+    local v2=($4 $5 $6)
+    echo "$(bc -l <<< "scale=3; ${v1[0]}*${v2[0]} + ${v1[1]}*${v2[1]} + ${v1[2]}*${v2[2]}")" 
+}
+
 # Subtract the second vector from the first vector
 vec_diff () {
     local v1=($1 $2 $3)
@@ -64,7 +71,24 @@ normalize () {
     echo "${v_res[@]}"
 }
 
+# Intersect camera ray with objects, return colour of closest object
+trace () {
+    local R0=($1 $2 $3)  # Ray origin
+    local Rd=($4 $5 $6)  # Ray direction
+    local L=($(vec_diff ${sphere0[origin]} "${R0[@]}"))
+    local a=$(dot_product "${Rd[@]}" "${Rd[@]}")
+    local b=$(bc -l <<< "scale=3; 2 * $(dot_product "${Rd[@]}" "${L[@]}")")
+    local c=$(bc -l <<< "scale=3; $(dot_product "${Rd[@]}" "${Rd[@]}") - ${sphere0[radius]}^2")
+    if (( $(bc -l <<< "scale=3; $b^2 > 4 * $a * $c") )); then
+        echo 81
+    else
+        echo 38
+    fi
+}
+
 init_globals 90
+
+reset=$(tput sgr0)
 
 # Ray origin in camera coordinates
 ray_origin=(0 0 0)
@@ -78,6 +102,9 @@ cam_to_world=(
     [3,0]=0      [3,1]=0      [3,2]=1 [3,3]=1
 )
 
+# Objects
+declare -A sphere0=([origin]="4 5 0.5" [radius]=0.1 [col]=81)
+
 ray_origin_world=($(vec_matrix_mult "${ray_origin[@]}" cam_to_world))
 
 for (( i = 0; i < img_h; ++i )); do
@@ -86,6 +113,8 @@ for (( i = 0; i < img_h; ++i )); do
         ray_p_world=($(vec_matrix_mult "${ray_p_cam[@]}" cam_to_world))
         ray_direction=($(vec_diff "${ray_p_world[@]}" "${ray_origin_world[@]}"))
         ray_direction=($(normalize "${ray_direction[@]}"))
-        echo "${ray_direction[@]}"
+        colour=$(trace "${ray_p_world[@]}" "${ray_direction[@]}")
+        colour=$(tput setab $colour)
+        printf "%b" "$colour $reset"
     done
 done
