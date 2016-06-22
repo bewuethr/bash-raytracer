@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Display squares with all terminal colours
+
 for i in {0..5}; do
     idx1=$(( 16 + i ))
     idx2=$(( 82 + i ))
