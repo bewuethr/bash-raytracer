@@ -13,8 +13,10 @@ A raytracer written in Bash (except for floating point calculations, where I use
 * Image size is whatever the terminal size is when starting the raytracer
 * No reflection, refraction, phong or other illumination models, shadows, shapes other than spheres, depth of field effect, motion blur, bump or environment mapping, subsurface scattering, ... you name it.
 
-The rendered image looks like this:
+The rendered image looks like this (micro-sized due to super slow generation):
 
 ![image]()
 
 If you think you can see an uncanny resemblance to the famous Whitted raytracer scene (minus the second sphere, the plane and all effects), you're completely right. That's what it'll become when it's grown up.
+
+![whitted](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/whitted.jpg)
