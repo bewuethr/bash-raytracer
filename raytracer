@@ -34,12 +34,6 @@ vec_matrix_mult () {
     echo "${v_res[@]}"
 }
 
-dot_product () {
-    local v1=($1 $2 $3)
-    local v2=($4 $5 $6)
-    echo "$(bc -l <<< "scale=3; ${v1[0]}*${v2[0]} + ${v1[1]}*${v2[1]} + ${v1[2]}*${v2[2]}")" 
-}
-
 # Subtract the second vector from the first vector
 vec_diff () {
     local v1=($1 $2 $3)
@@ -80,7 +74,7 @@ intersect () {
     local c=($7 $8 $9)
     local r=${10}
     bc -l <<EOF
-        define cross_prod(v1[], v2[]) {
+        define dot_prod(v1[], v2[]) {
         auto i, prod
         for (i = 0; i < 3; ++i)
             prod += v1[i] * v2[i]
@@ -98,9 +92,9 @@ intersect () {
         c[2] = ${c[2]}
         r    = $r
 
-        a = cross_prod(d[], d[])
-        b = 2 * (cross_prod(o[], d[]) - cross_prod(d[], c[]))
-        c = cross_prod(o[], o[]) + cross_prod(c[], c[]) - 2 * cross_prod(o[], c[]) - r^2
+        a = dot_prod(d[], d[])
+        b = 2 * (dot_prod(o[], d[]) - dot_prod(d[], c[]))
+        c = dot_prod(o[], o[]) + dot_prod(c[], c[]) - 2 * dot_prod(o[], c[]) - r^2
 
         print b^2 >= 4 * a * c
 EOF
