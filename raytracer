@@ -18,6 +18,15 @@ init_globals () {
 
     # Background colour
     bgr_col=38
+
+    # Reset colour
+    reset=$(tput sgr0)
+
+    # Objects
+    declare -Ag sphere0=([origin]="1.5 2 0.5" [radius]=0.9 [col]=81)
+
+    # Ray origin in camera coordinates
+    ray_origin=(0 0 0)
 }
 
 # Transform 3D vector with given matrix - assume row vector and v * M
@@ -116,14 +125,6 @@ trace () {
 
 init_globals 90
 
-reset=$(tput sgr0)
-
-# Objects
-declare -A sphere0=([origin]="1.5 2 0.5" [radius]=0.9 [col]=81)
-
-# Ray origin in camera coordinates
-ray_origin=(0 0 0)
-
 # Initialize camera-to-world matrix, currently hardcoded
 declare -A cam_to_world
 cam_to_world=(
@@ -132,7 +133,6 @@ cam_to_world=(
     [2,0]=-0.707 [2,1]=-0.707 [2,2]=0 [2,3]=0
     [3,0]=0      [3,1]=0      [3,2]=1 [3,3]=1
 )
-
 
 ray_origin_world=($(vec_matrix_mult "${ray_origin[@]}" cam_to_world))
 
