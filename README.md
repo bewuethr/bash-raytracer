@@ -13,7 +13,7 @@ A raytracer written in Bash (except for floating point calculations, where I use
 * Image size is whatever the terminal size is when starting the raytracer
 * No reflection, refraction, phong or other illumination models, shadows, shapes other than spheres, depth of field effect, motion blur, bump or environment mapping, subsurface scattering, ... you name it.
 
-The rendered image looks like this (micro-sized due to super slow generation):
+The rendered image looks like this:
 
 ![rendering1](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20160622.jpg)
 
