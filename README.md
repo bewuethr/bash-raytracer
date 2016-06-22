@@ -15,7 +15,7 @@ A raytracer written in Bash (except for floating point calculations, where I use
 
 The rendered image looks like this (micro-sized due to super slow generation):
 
-![image]()
+![rendering1](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20160622.jpg)
 
 If you think you can see an uncanny resemblance to the famous Whitted raytracer scene (minus the second sphere, the plane and all effects), you're completely right. That's what it'll become when it's grown up.
 
