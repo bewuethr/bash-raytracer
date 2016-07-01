@@ -33,23 +33,20 @@ init_globals () {
 vec_matrix_mult () {
     local v=($1 $2 $3) # The vector
     local -n M=$4      # The matrix
-    local v_res
-    v_res[0]=$(bc -l <<< \
-        "scale=3; ${v[0]} * ${M[0,0]} + ${v[1]} * ${M[1,0]} + ${v[2]} * ${M[2,0]} + ${M[3,0]}")
-    v_res[1]=$(bc -l <<< \
-        "scale=3; ${v[0]} * ${M[0,1]} + ${v[1]} * ${M[1,1]} + ${v[2]} * ${M[2,1]} + ${M[3,1]}")
-    v_res[2]=$(bc -l <<< \
-        "scale=3; ${v[0]} * ${M[0,2]} + ${v[1]} * ${M[1,2]} + ${v[2]} * ${M[2,2]} + ${M[3,2]}")
-    echo "${v_res[@]}"
+    echo "$(bc -l <<< "scale=3;
+        ${v[0]} * ${M[0,0]} + ${v[1]} * ${M[1,0]} + ${v[2]} * ${M[2,0]} + ${M[3,0]};
+        ${v[0]} * ${M[0,1]} + ${v[1]} * ${M[1,1]} + ${v[2]} * ${M[2,1]} + ${M[3,1]};
+        ${v[0]} * ${M[0,2]} + ${v[1]} * ${M[1,2]} + ${v[2]} * ${M[2,2]} + ${M[3,2]}")"
 }
 
 # Subtract the second vector from the first vector
 vec_diff () {
     local v1=($1 $2 $3)
     local v2=($4 $5 $6)
-    echo "$(bc -l <<< "scale=3; ${v1[0]} - ${v2[0]}") \
-        $(bc -l <<< "scale=3; ${v1[1]} - ${v2[1]}") \
-        $(bc -l <<< "scale=3; ${v1[2]} - ${v2[2]}")"
+    echo "$(bc -l <<< "scale=3;
+        ${v1[0]} - ${v2[0]};
+        ${v1[1]} - ${v2[1]};
+        ${v1[2]} - ${v2[2]}")"
 }
 
 # Transform x,y raster coordinates to camera coordinates
@@ -57,21 +54,19 @@ raster_to_camera () {
     local x=$1
     local y=$2
 
-    x=$(bc -l <<< "scale=3; (2 * ($x + 0.5) / $img_w - 1) * $img_ar * $scale")
-    y=$(bc -l <<< "scale=3; 1 - 2 * ($y + 0.5) / $img_h * $scale")
-
-    echo "$x $y -1"
+    echo "$(bc -l <<< "scale=3;
+        (2 * ($x + 0.5) / $img_w - 1) * $img_ar * $scale;
+        1 - 2 * ($y + 0.5) / $img_h * $scale")
+        -1"
 }
 
 # Normalize argument vector to unit length
 normalize () {
     local v=($@)
-    local len=$(bc -l <<< "scale=3; sqrt(${v[0]}^2 + ${v[1]}^2 + ${v[2]}^2)")
-    local v_res
-    v_res[0]=$(bc -l <<< "scale=3; ${v[0]} / $len")
-    v_res[1]=$(bc -l <<< "scale=3; ${v[1]} / $len")
-    v_res[2]=$(bc -l <<< "scale=3; ${v[2]} / $len")
-    echo "${v_res[@]}"
+    echo "$(bc -l <<< "scale=3; len = sqrt(${v[0]}^2 + ${v[1]}^2 + ${v[2]}^2);
+        ${v[0]} / len;
+        ${v[1]} / len;
+        ${v[2]} / len")"
 }
 
 # Arguments: origin and direction of ray, centre and radius of sphere
