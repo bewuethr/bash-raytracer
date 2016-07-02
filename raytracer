@@ -17,13 +17,14 @@ init_globals () {
     scale=$(bc -l <<< "scale=3; x = $fov * 2 * a(1) / 180; s(x)/c(x)")
 
     # Background colour
-    bgr_col=38
+    bg_col=38
 
     # Reset colour
     reset=$(tput sgr0)
 
     # Objects
-    declare -Ag sphere0=([origin]="1.5 2 0.5" [radius]=0.9 [col]=81)
+    declare -Ag obj_sphere0=([origin]="0.2 3 1.1" [radius]=1.25 [col]=196)
+    declare -Ag obj_sphere1=([origin]="-1.5 4 0.3" [radius]=1.2 [col]=81)
 
     # Ray origin in camera coordinates
     ray_origin=(0 0 0)
@@ -70,8 +71,7 @@ normalize () {
 }
 
 # Arguments: origin and direction of ray, centre and radius of sphere
-# Prints 1 if ray intersects sphere and 0 if not
-# Currently just evaluating the discriminant of the quadratic equation
+# Prints distance to origin if ray intersects sphere and -1 if not
 intersect () {
     local o=($1 $2 $3)
     local d=($4 $5 $6)
@@ -79,9 +79,9 @@ intersect () {
     local r=${10}
     bc -l <<EOF
         define dot_prod(v1[], v2[]) {
-        auto i, prod
-        for (i = 0; i < 3; ++i)
-            prod += v1[i] * v2[i]
+            auto i, prod
+            for (i = 0; i < 3; ++i)
+                prod += v1[i] * v2[i]
             return prod
         }
 
@@ -100,22 +100,46 @@ intersect () {
         b = 2 * (dot_prod(o[], d[]) - dot_prod(d[], c[]))
         c = dot_prod(o[], o[]) + dot_prod(c[], c[]) - 2 * dot_prod(o[], c[]) - r^2
 
-        print b^2 >= 4 * a * c
+        discr = b^2 - 4 * a * c
+
+        if (discr < 0) {
+            print -1
+        } else if (discr == 0) {
+            print -b / (2 * a)
+        } else {
+            t1 = (-b + sqrt(discr)) / (2 * a)
+            t2 = (-b - sqrt(discr)) / (2 * a)
+            if (t1 < t2) {
+                print t1
+            } else {
+                print t2
+            }
+        }
 EOF
 }
 
 # Arguments: origin and direction of ray
 # Tests intersection with objects in scene
 # Currently hardcoded to the global sphere
-# Prints colour of sphere if the ray intersects, "Background" if not
+# Prints colour of sphere if the ray intersects, background colour if not
 trace () {
     local o=($1 $2 $3)
     local d=($4 $5 $6)
-    if (( $(intersect "${o[@]}" "${d[@]}" ${sphere0[origin]} ${sphere0[radius]}) )); then
-        echo ${sphere0[col]}
-    else
-        echo $bgr_col
-    fi
+    local t_min=999999
+    local sphere_name
+    local sphere
+    local t
+    local col=$bg_col
+    for sphere_name in "${!obj_sphere@}"; do
+        declare -n sphere=$sphere_name
+        t=$(intersect "${o[@]}" "${d[@]}" ${sphere[origin]} ${sphere[radius]})
+        if (( $(bc -l <<< "$t > 0 && $t < $t_min") )); then
+            t_min=$t
+            col=${sphere[col]}
+        fi
+    done
+
+    echo "$col"
 }
 
 init_globals 90
@@ -123,10 +147,10 @@ init_globals 90
 # Initialize camera-to-world matrix, currently hardcoded
 declare -A cam_to_world
 cam_to_world=(
-    [0,0]=0.707  [0,1]=-0.707 [0,2]=0 [0,3]=0
-    [1,0]=0      [1,1]=0      [1,2]=1 [1,3]=0
-    [2,0]=-0.707 [2,1]=-0.707 [2,2]=0 [2,3]=0
-    [3,0]=0      [3,1]=0      [3,2]=1 [3,3]=1
+    [0,0]=1 [0,1]=0  [0,2]=0 [0,3]=0
+    [1,0]=0 [1,1]=0  [1,2]=1 [1,3]=0
+    [2,0]=0 [2,1]=-1 [2,2]=0 [2,3]=0
+    [3,0]=0 [3,1]=0  [3,2]=1 [3,3]=1
 )
 
 ray_origin_world=($(vec_matrix_mult "${ray_origin[@]}" cam_to_world))
