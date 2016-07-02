@@ -18,7 +18,7 @@ The rendered image now looks like this:
 
 ![rendering2](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20160702.jpg)
 
-Overlayed on top of the original Whitted scene:
+Overlaid on top of the original Whitted scene:
 
 ![rendering2whitted](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20160702_overlay.jpg)
 
