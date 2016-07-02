@@ -16,11 +16,11 @@ A raytracer written in Bash (except for floating point calculations, where I use
 
 The rendered image now looks like this:
 
-![rendering2](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20160702.jpg)
+![rendering2](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20160702.png)
 
 Overlaid on top of the original Whitted scene:
 
-![rendering2whitted](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20160702_overlay.jpg)
+![rendering2whitted](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20160702_overlay.png)
 
 ### 2016/06/22
 
@@ -33,7 +33,7 @@ Overlaid on top of the original Whitted scene:
 
 The rendered image looks like this:
 
-![rendering1](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20160622.jpg)
+![rendering1](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20160622.png)
 
 If you think you can see an uncanny resemblance to the famous Whitted raytracer scene (minus the second sphere, the plane and all effects), you're completely right. That's what it'll become when it's grown up.
 
