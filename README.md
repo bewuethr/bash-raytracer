@@ -4,6 +4,24 @@ A raytracer written in Bash (except for floating point calculations, where I use
 
 ## Changelog
 
+### 2016/07/02
+
+* Now capable of handling multiple objects
+    * Loops over all variables with a name that starts with `obj_`
+    * Calculates actual intersection point, tests for closest one
+    * Still only spheres, though
+* Scene with two spheres
+    * "Glass" is currently red
+    * New camera-to-world matrix for simpler scene geometry values
+
+The rendered image now looks like this:
+
+![rendering2](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20160702.jpg)
+
+Overlayed on top of the original Whitted scene:
+
+![rendering2whitted](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20160702_overlay.jpg)
+
 ### 2016/06/22
 
 * First version capable of generating an image
