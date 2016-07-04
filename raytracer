@@ -129,7 +129,7 @@ trace () {
     local sphere_name
     local sphere
     local t
-    local col=$bg_col
+    local col
     for sphere_name in "${!obj_sphere@}"; do
         declare -n sphere=$sphere_name
         t=$(intersect "${o[@]}" "${d[@]}" ${sphere[origin]} ${sphere[radius]})
@@ -139,7 +139,7 @@ trace () {
         fi
     done
 
-    echo "$col"
+    echo "${col:-$bg_col}"
 }
 
 init_globals 90
