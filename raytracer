@@ -23,8 +23,18 @@ init_globals () {
     reset=$(tput sgr0)
 
     # Objects
-    declare -Ag obj_sphere0=([origin]="0.2 3 1.1" [radius]=1.25 [col]=196)
-    declare -Ag obj_sphere1=([origin]="-1.5 4 0.3" [radius]=1.2 [col]=81)
+    declare -Ag obj_sphere0=(
+        [origin]="0.2 3 1.1"
+        [radius]=1.25
+        [col]=196
+        [intersect]=intersect_sphere
+    )
+    declare -Ag obj_sphere1=(
+        [origin]="-1.5 4 0.3"
+        [radius]=1.2
+        [col]=81
+        [intersect]=intersect_sphere
+    )
 
     # Initialize camera-to-world matrix
     declare -Ag cam_to_world
@@ -60,6 +70,7 @@ vec_diff () {
 }
 
 # Transform x,y raster coordinates to camera coordinates
+# Image plane is one unit away from camera along negative z-axis
 raster_to_camera () {
     local x=$1
     local y=$2
@@ -79,13 +90,15 @@ normalize () {
         ${v[2]} / len")"
 }
 
-# Arguments: origin and direction of ray, centre and radius of sphere
+# Intersect ray with sphere
+# Arguments: origin and direction of ray, variable name of sphere
 # Prints distance to origin if ray intersects sphere and -1 if not
-intersect () {
+intersect_sphere () {
     local o=($1 $2 $3)
     local d=($4 $5 $6)
-    local c=($7 $8 $9)
-    local r=${10}
+    local -n sphere=$7
+    local c=(${sphere[origin]})
+    local r=${sphere[radius]}
     bc -l <<EOF
         define dot_prod(v1[], v2[]) {
             auto i, prod
@@ -129,22 +142,20 @@ EOF
 
 # Arguments: origin and direction of ray
 # Tests intersection with objects in scene
-# Currently hardcoded to the global sphere
-# Prints colour of sphere if the ray intersects, background colour if not
+# Prints colour of object if the ray intersects, background colour if not
 trace () {
     local o=($1 $2 $3)
     local d=($4 $5 $6)
     local t_min=999999
-    local sphere_name
-    local sphere
+    local object_name
     local t
     local col
-    for sphere_name in "${!obj_sphere@}"; do
-        declare -n sphere=$sphere_name
-        t=$(intersect "${o[@]}" "${d[@]}" ${sphere[origin]} ${sphere[radius]})
+    for object_name in "${!obj_@}"; do
+        local -n object=$object_name
+        t=$("${object[intersect]}" "${o[@]}" "${d[@]}" "$object_name")
         if (( $(bc -l <<< "$t > 0 && $t < $t_min") )); then
             t_min=$t
-            col=${sphere[col]}
+            col=${object[col]}
         fi
     done
 
