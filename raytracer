@@ -11,7 +11,7 @@ init_globals () {
     img_h=$(tput lines)
 
     # Aspect ratio takes non-square pixel shape into account
-    img_ar=$(bc -l <<< "scale=3; ($img_w / 2) / $img_h")
+    img_ar=$(bc <<< "scale=3; ($img_w / 2) / $img_h")
 
     # Scale for field of view; pi is 4 * atan(1)
     scale=$(bc -l <<< "scale=3; x = $fov * 2 * a(1) / 180; s(x)/c(x)")
@@ -59,7 +59,7 @@ init_globals () {
 vec_matrix_mult () {
     local v=($1 $2 $3) # The vector
     local -n M=$4      # The matrix
-    echo "$(bc -l <<< "scale=3;
+    echo "$(bc <<< "scale=3;
         ${v[0]} * ${M[0,0]} + ${v[1]} * ${M[1,0]} + ${v[2]} * ${M[2,0]} + ${M[3,0]};
         ${v[0]} * ${M[0,1]} + ${v[1]} * ${M[1,1]} + ${v[2]} * ${M[2,1]} + ${M[3,1]};
         ${v[0]} * ${M[0,2]} + ${v[1]} * ${M[1,2]} + ${v[2]} * ${M[2,2]} + ${M[3,2]}")"
@@ -69,7 +69,7 @@ vec_matrix_mult () {
 vec_diff () {
     local v1=($1 $2 $3)
     local v2=($4 $5 $6)
-    echo "$(bc -l <<< "scale=3;
+    echo "$(bc <<< "scale=3;
         ${v1[0]} - ${v2[0]};
         ${v1[1]} - ${v2[1]};
         ${v1[2]} - ${v2[2]}")"
@@ -81,7 +81,7 @@ raster_to_camera () {
     local x=$1
     local y=$2
 
-    echo "$(bc -l <<< "scale=3;
+    echo "$(bc <<< "scale=3;
         (2 * ($x + 0.5) / $img_w - 1) * $img_ar * $scale;
         1 - 2 * ($y + 0.5) / $img_h * $scale")
         -1"
@@ -90,7 +90,7 @@ raster_to_camera () {
 # Normalize argument vector to unit length
 normalize () {
     local v=($@)
-    echo "$(bc -l <<< "scale=3; len = sqrt(${v[0]}^2 + ${v[1]}^2 + ${v[2]}^2);
+    echo "$(bc <<< "scale=3; len = sqrt(${v[0]}^2 + ${v[1]}^2 + ${v[2]}^2);
         ${v[0]} / len;
         ${v[1]} / len;
         ${v[2]} / len")"
@@ -108,7 +108,7 @@ intersect_sphere () {
     local c=(${sphere[origin]})
     local r=${sphere[radius]}
 
-    bc -l bc_lib.bc <<EOF
+    bc bc_lib.bc <<EOF
         scale = 3
 
         o[0] = ${o[0]}
@@ -152,7 +152,7 @@ intersect_plane () {
     local p0=(${plane[p0]})
     local n=(${plane[n]})
 
-    bc -l bc_lib.bc <<EOF
+    bc bc_lib.bc <<EOF
         scale = 3
 
         o[0]  = ${o[0]}
@@ -170,7 +170,7 @@ intersect_plane () {
 
         denom = dot_prod(n[], d[])
 
-        if (denom > 10^-6 || denom < -10^-6) {
+        if (abs(denom) > 10^-6) {
             for (i = 0; i < 3; ++i)
                 vdif[i] = p0[i] - o[i]
             t = dot_prod(n[], vdif[]) / dot_prod(d[], n[])
@@ -198,7 +198,7 @@ trace () {
     for object_name in "${!obj_@}"; do
         local -n object=$object_name
         t=$("${object[intersect]}" "${o[@]}" "${d[@]}" "$object_name")
-        if (( $(bc -l <<< "$t > 0 && $t < $t_min") )); then
+        if (( $(bc <<< "$t > 0 && $t < $t_min") )); then
             t_min=$t
             col=${object[col]}
         fi

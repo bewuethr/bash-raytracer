@@ -5,3 +5,12 @@ define dot_prod(v1[], v2[]) {
         prod += v1[i] * v2[i]
     return prod
 }
+
+/* Absolute value */
+define abs(val) {
+    if (val > 0) {
+        return val
+    } else {
+        return -val
+    }
+}
