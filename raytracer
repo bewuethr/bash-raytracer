@@ -108,14 +108,7 @@ intersect_sphere () {
     local c=(${sphere[origin]})
     local r=${sphere[radius]}
 
-    bc -l <<EOF
-        define dot_prod(v1[], v2[]) {
-            auto i, prod
-            for (i = 0; i < 3; ++i)
-                prod += v1[i] * v2[i]
-            return prod
-        }
-
+    bc -l bc_lib.bc <<EOF
         scale = 3
 
         o[0] = ${o[0]}
@@ -159,14 +152,7 @@ intersect_plane () {
     local p0=(${plane[p0]})
     local n=(${plane[n]})
 
-    bc -l <<EOF
-        define dot_prod(v1[], v2[]) {
-            auto i, prod
-            for (i = 0; i < 3; ++i)
-                prod += v1[i] * v2[i]
-            return prod
-        }
-
+    bc -l bc_lib.bc <<EOF
         scale = 3
 
         o[0]  = ${o[0]}
