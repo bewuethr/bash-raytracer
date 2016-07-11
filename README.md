@@ -4,6 +4,19 @@ A raytracer written in Bash (except for floating point calculations, where I use
 
 ## Changelog
 
+### 2016/07/11
+
+* Add ray-plane intersection function
+* Add plane to scene
+
+Rendered image:
+
+![rendering3](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20160711.png)
+
+And overlaid on top of the original scene:
+
+![rendering3whitted](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20160711_overlay.png)
+
 ### 2016/07/02
 
 * Now capable of handling multiple objects
