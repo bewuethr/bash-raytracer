@@ -35,6 +35,12 @@ init_globals () {
         [col]=81
         [intersect]=intersect_sphere
     )
+    declare -Ag obj_plane0=(
+        [p0]="0 0 -1.2"
+        [n]="0 0 1"
+        [col]=226
+        [intersect]=intersect_plane
+    )
 
     # Initialize camera-to-world matrix
     declare -Ag cam_to_world
@@ -90,15 +96,18 @@ normalize () {
         ${v[2]} / len")"
 }
 
-# Intersect ray with sphere
-# Arguments: origin and direction of ray, variable name of sphere
-# Prints distance to origin if ray intersects sphere and -1 if not
+# Intersection functions
+# Arguments: origin and direction of ray, variable name of object
+# Prints distance to origin if ray intersects object and -1 if not
+
+# Ray and sphere
 intersect_sphere () {
     local o=($1 $2 $3)
     local d=($4 $5 $6)
     local -n sphere=$7
     local c=(${sphere[origin]})
     local r=${sphere[radius]}
+
     bc -l <<EOF
         define dot_prod(v1[], v2[]) {
             auto i, prod
@@ -106,6 +115,8 @@ intersect_sphere () {
                 prod += v1[i] * v2[i]
             return prod
         }
+
+        scale = 3
 
         o[0] = ${o[0]}
         o[1] = ${o[1]}
@@ -136,6 +147,54 @@ intersect_sphere () {
             } else {
                 print t2
             }
+        }
+EOF
+}
+
+# Ray and plane
+intersect_plane () {
+    local o=($1 $2 $3)
+    local d=($4 $5 $6)
+    local -n plane=$7
+    local p0=(${plane[p0]})
+    local n=(${plane[n]})
+
+    bc -l <<EOF
+        define dot_prod(v1[], v2[]) {
+            auto i, prod
+            for (i = 0; i < 3; ++i)
+                prod += v1[i] * v2[i]
+            return prod
+        }
+
+        scale = 3
+
+        o[0]  = ${o[0]}
+        o[1]  = ${o[1]}
+        o[2]  = ${o[2]}
+        d[0]  = ${d[0]}
+        d[1]  = ${d[1]}
+        d[2]  = ${d[2]}
+        p0[0] = ${p0[0]}
+        p0[1] = ${p0[1]}
+        p0[2] = ${p0[2]}
+        n[0]  = ${n[0]}
+        n[1]  = ${n[1]}
+        n[2]  = ${n[2]}
+
+        denom = dot_prod(n[], d[])
+
+        if (denom > 10^-6 || denom < -10^-6) {
+            for (i = 0; i < 3; ++i)
+                vdif[i] = p0[i] - o[i]
+            t = dot_prod(n[], vdif[]) / dot_prod(d[], n[])
+            if (t >= 0) {
+                print t
+            } else {
+                print -1
+            }
+        } else {
+            print -1
         }
 EOF
 }
