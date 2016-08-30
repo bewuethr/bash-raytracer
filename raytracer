@@ -23,30 +23,127 @@ init_globals () {
     reset=$(tput sgr0)
 
     # Objects
-    declare -Ag obj_sphere0=(
-        [origin]="0.2 3 1.1"
-        [radius]=1.25
-        [col]=196
-        [intersect]=intersect_sphere
-    )
-    declare -Ag obj_sphere1=(
-        [origin]="-1.5 4 0.3"
-        [radius]=1.2
-        [col]=81
-        [intersect]=intersect_sphere
-    )
+    # declare -Ag obj_sphere0=(
+    #     [origin]="0.2 3 1.1"
+    #     [radius]=1.25
+    #     [col]=196
+    #     [intersect]=intersect_sphere
+    # )
+    # declare -Ag obj_sphere1=(
+    #     [origin]="-1.5 4 0.3"
+    #     [radius]=1.2
+    #     [col]=81
+    #     [intersect]=intersect_sphere
+    # )
     declare -Ag obj_plane0=(
         [p0]="0 0 -1.2"
         [n]="0 0 1"
-        [col]=226
+        # [col]=226
+        [col]=81
         [intersect]=intersect_plane
     )
-    declare -Ag obj_triangle0=(
-        [p0]="0.1 3.5 -0.1"
-        [p1]="2 4 5"
-        [p2]="-1.5 3 4.5"
+    # declare -Ag obj_triangle0=(
+    #     [p0]="0.1 3.5 -0.1"
+    #     [p1]="2 4 5"
+    #     [p2]="-1.5 3 4.5"
+    #     [col]=46
+    #     [intersect]=intersect_triangle
+    # )
+    declare -Ag obj_sphere00=(
+        [origin]="-15 0 0"
+        [radius]=0.1
+        [col]=196   # red
+        [intersect]=intersect_sphere
+    )
+    declare -Ag obj_sphere01=(
+        [origin]="-5 0 0"
+        [radius]=0.1
+        [col]=196
+        [intersect]=intersect_sphere
+    )
+    declare -Ag obj_sphere02=(
+        [origin]="5 0 0"
+        [radius]=0.1
+        [col]=196
+        [intersect]=intersect_sphere
+    )
+    declare -Ag obj_sphere03=(
+        [origin]="15 0 0"
+        [radius]=0.1
+        [col]=196
+        [intersect]=intersect_sphere
+    )
+    declare -Ag obj_sphere04=(
+        [origin]="-15 10 0"
+        [radius]=0.1
+        [col]=226   # yellow
+        [intersect]=intersect_sphere
+    )
+    declare -Ag obj_sphere05=(
+        [origin]="-5 10 0"
+        [radius]=0.1
+        [col]=226
+        [intersect]=intersect_sphere
+    )
+    declare -Ag obj_sphere06=(
+        [origin]="5 10 0"
+        [radius]=0.1
+        [col]=226
+        [intersect]=intersect_sphere
+    )
+    declare -Ag obj_sphere07=(
+        [origin]="15 10 0"
+        [radius]=0.1
+        [col]=226
+        [intersect]=intersect_sphere
+    )
+    declare -Ag obj_sphere08=(
+        [origin]="-15 20 0"
+        [radius]=0.1
+        [col]=21    # blue
+        [intersect]=intersect_sphere
+    )
+    declare -Ag obj_sphere09=(
+        [origin]="-5 20 0"
+        [radius]=0.1
+        [col]=21
+        [intersect]=intersect_sphere
+    )
+    declare -Ag obj_sphere10=(
+        [origin]="5 20 0"
+        [radius]=0.1
+        [col]=21
+        [intersect]=intersect_sphere
+    )
+    declare -Ag obj_sphere11=(
+        [origin]="15 20 0"
+        [radius]=0.1
+        [col]=21
+        [intersect]=intersect_sphere
+    )
+    declare -Ag obj_sphere12=(
+        [origin]="-15 30 0"
+        [radius]=0.1
+        [col]=46    # green
+        [intersect]=intersect_sphere
+    )
+    declare -Ag obj_sphere13=(
+        [origin]="-5 30 0"
+        [radius]=0.1
         [col]=46
-        [intersect]=intersect_triangle
+        [intersect]=intersect_sphere
+    )
+    declare -Ag obj_sphere14=(
+        [origin]="5 30 0"
+        [radius]=0.1
+        [col]=46
+        [intersect]=intersect_sphere
+    )
+    declare -Ag obj_sphere15=(
+        [origin]="15 30 0"
+        [radius]=0.1
+        [col]=46
+        [intersect]=intersect_sphere
     )
 
     # Initialize camera-to-world matrix
