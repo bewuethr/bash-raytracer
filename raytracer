@@ -41,6 +41,13 @@ init_globals () {
         [col]=226
         [intersect]=intersect_plane
     )
+    declare -Ag obj_triangle0=(
+        [p0]="0.1 3.5 -0.1"
+        [p1]="2 4 5"
+        [p2]="-1.5 3 4.5"
+        [col]=46
+        [intersect]=intersect_triangle
+    )
 
     # Initialize camera-to-world matrix
     declare -Ag cam_to_world
@@ -60,8 +67,8 @@ vec_matrix_mult () {
     local v=($1 $2 $3) # The vector
     local -n M=$4      # The matrix
     echo "$(bc <<< "scale=3;
-        ${v[0]} * ${M[0,0]} + ${v[1]} * ${M[1,0]} + ${v[2]} * ${M[2,0]} + ${M[3,0]};
-        ${v[0]} * ${M[0,1]} + ${v[1]} * ${M[1,1]} + ${v[2]} * ${M[2,1]} + ${M[3,1]};
+        ${v[0]} * ${M[0,0]} + ${v[1]} * ${M[1,0]} + ${v[2]} * ${M[2,0]} + ${M[3,0]}
+        ${v[0]} * ${M[0,1]} + ${v[1]} * ${M[1,1]} + ${v[2]} * ${M[2,1]} + ${M[3,1]}
         ${v[0]} * ${M[0,2]} + ${v[1]} * ${M[1,2]} + ${v[2]} * ${M[2,2]} + ${M[3,2]}")"
 }
 
@@ -69,9 +76,9 @@ vec_matrix_mult () {
 vec_diff () {
     local v1=($1 $2 $3)
     local v2=($4 $5 $6)
-    echo "$(bc <<< "scale=3;
-        ${v1[0]} - ${v2[0]};
-        ${v1[1]} - ${v2[1]};
+    echo "$(bc <<< "scale=3
+        ${v1[0]} - ${v2[0]}
+        ${v1[1]} - ${v2[1]}
         ${v1[2]} - ${v2[2]}")"
 }
 
@@ -81,8 +88,8 @@ raster_to_camera () {
     local x=$1
     local y=$2
 
-    echo "$(bc <<< "scale=3;
-        (2 * ($x + 0.5) / $img_w - 1) * $img_ar * $scale;
+    echo "$(bc <<< "scale=3
+        (2 * ($x + 0.5) / $img_w - 1) * $img_ar * $scale
         1 - 2 * ($y + 0.5) / $img_h * $scale")
         -1"
 }
@@ -90,9 +97,9 @@ raster_to_camera () {
 # Normalize argument vector to unit length
 normalize () {
     local v=($@)
-    echo "$(bc <<< "scale=3; len = sqrt(${v[0]}^2 + ${v[1]}^2 + ${v[2]}^2);
-        ${v[0]} / len;
-        ${v[1]} / len;
+    echo "$(bc <<< "scale=3; len = sqrt(${v[0]}^2 + ${v[1]}^2 + ${v[2]}^2)
+        ${v[0]} / len
+        ${v[1]} / len
         ${v[2]} / len")"
 }
 
@@ -171,9 +178,8 @@ intersect_plane () {
         denom = dot_prod(n[], d[])
 
         if (abs(denom) > 10^-6) {
-            for (i = 0; i < 3; ++i)
-                vdif[i] = p0[i] - o[i]
-            t = dot_prod(n[], vdif[]) / dot_prod(d[], n[])
+            . = vec_diff(p0[], o[], vdif[])
+            t = dot_prod(n[], vdif[]) / denom
             if (t >= 0) {
                 print t
             } else {
@@ -183,6 +189,91 @@ intersect_plane () {
             print -1
         }
 EOF
+}
+
+# Ray and triangle
+intersect_triangle () {
+    local o=($1 $2 $3)
+    local d=($4 $5 $6)
+    local -n triangle=$7
+    local p0=(${triangle[p0]})
+    local p1=(${triangle[p1]})
+    local p2=(${triangle[p2]})
+
+    bc bc_lib.bc <<EOF
+        scale = 3
+
+        o[0]  = ${o[0]}
+        o[1]  = ${o[1]}
+        o[2]  = ${o[2]}
+        d[0]  = ${d[0]}
+        d[1]  = ${d[1]}
+        d[2]  = ${d[2]}
+        p0[0] = ${p0[0]}
+        p0[1] = ${p0[1]}
+        p0[2] = ${p0[2]}
+        p1[0] = ${p1[0]}
+        p1[1] = ${p1[1]}
+        p1[2] = ${p1[2]}
+        p2[0] = ${p2[0]}
+        p2[1] = ${p2[1]}
+        p2[2] = ${p2[2]}
+
+
+        . = vec_diff(p1[], p0[], p0p1[])
+        . = vec_diff(p2[], p0[], p0p2[])
+        . = cross_prod(p0p1[], p0p2[], n[])
+        denom = dot_prod(n[], d[])
+
+        if (abs(denom) > 10^-6) {
+            /* There is a ray-plane intersection */
+            . = vec_diff(p0[], o[], vdif[])
+            t = dot_prod(n[], vdif[]) / denom
+
+            if (t >= 0) {
+                /* Test if intersection point p is in triangle */
+                for (i = 0; i < 3; ++i)
+                    p[i] = o[i] + t * d[i]
+
+                /* First edge */
+                . = vec_diff(p[], p0[], p0p[])
+                . = cross_prod(p0p1[], p0p[], cp[])
+                if (dot_prod(n[], cp[]) < 0)
+                    t = -1
+
+                /* Second edge */
+                if (t != -1) {
+                    . = vec_diff(p2[], p1[], p1p2[])
+                    . = vec_diff(p[], p1[], p1p[])
+                    . = cross_prod(p1p2[], p1p[], cp[])
+                    if (dot_prod(n[], cp[]) < 0)
+                        t = -1
+                }
+
+                /* Third edge */
+                if (t != -1) {
+                    . = vec_diff(p0[], p2[], p2p0[])
+                    . = vec_diff(p[], p2[], p2p[])
+                    . = cross_prod(p2p0[], p2p[], cp[])
+                    if (dot_prod(n[], cp[]) < 0)
+                        t = -1
+                }
+
+                /* The intersection point is within the triangle */
+                print t
+
+            } else {
+                /* Ray intersects plane behind camera */
+                print -1
+            }
+
+        } else {
+            /* Ray is parallel to triangle plane */
+            print -1
+        }
+        print -1
+EOF
+
 }
 
 # Arguments: origin and direction of ray

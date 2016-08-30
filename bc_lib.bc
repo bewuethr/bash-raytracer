@@ -1,9 +1,31 @@
+/* Subtract the second vector from the first vector */
+define vec_diff(v1[], v2[], *vdiff[]) {
+    auto i
+    for (i = 0; i < 3; ++i)
+        vdiff[i] = v1[i] - v2[i]
+}
+
 /* Dot product of two vectors */
 define dot_prod(v1[], v2[]) {
     auto i, prod
     for (i = 0; i < 3; ++i)
         prod += v1[i] * v2[i]
     return prod
+}
+
+/* Cross product of two vectors */
+define cross_prod(v1[], v2[], *vcr[]) {
+    vcr[0] = v1[1] * v2[2] - v1[2] * v2[1]
+    vcr[1] = v1[2] * v2[0] - v1[0] * v2[2]
+    vcr[2] = v1[0] * v2[1] - v1[1] * v2[0]
+}
+
+/* Normalize a vector */
+define norm(*v[]) {
+    auto len, i
+    len = sqrt(v[0]^2 + v[1]^2 + v[2]^2)
+    for (i = 0; i < 3; ++i)
+        v[i] /= len
 }
 
 /* Absolute value */
