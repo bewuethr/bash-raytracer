@@ -4,6 +4,20 @@ A raytracer written in Bash (except for floating point calculations, where I use
 
 ## Changelog
 
+### 2016/08/30
+
+* Add ray-triangle intersection function (simple "inside-outside" technique)
+* Replace infinite plane with two triangles and change a few colours to accommodate yellow/red plane (will be checkered later)
+* Clean up `bc` parts after understanding how to pass arrays to functions by reference (which is mentioned in the [manual](https://www.gnu.org/software/bc/manual/html_mono/bc.html#SEC17), but not shown)
+
+Rendered image:
+
+![rendering4](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20160830.png)
+
+And overlaid on top of the original scene:
+
+![rendering4whitted](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20160830_overlay.png)
+
 ### 2016/07/11
 
 * Add ray-plane intersection function
