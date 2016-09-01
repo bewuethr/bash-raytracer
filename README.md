@@ -6,7 +6,7 @@ A raytracer written in Bash (except for floating point calculations, where I use
 
 ### 2016/09/01
 
-* Groundwork for shading: figure out mapping from RGB triplets to terminal colours, mostly following [this Stack Overflow answer](http://stackoverflow.com/questions/27159322/rgb-values-of-the-colors-in-the-ansi-extended-colors-index-17-255).
+* Groundwork for shading: figure out mapping from RGB triplets to terminal colours, mostly following [this Stack Overflow answer](http://stackoverflow.com/questions/27159322/rgb-values-of-the-colors-in-the-ansi-extended-colors-index-17-255)
 * Auxiliary script to show and label all terminal colours: `tools/showcolours`
 * Auxiliary script to loop over RGB space, convert to terminal colours and display them: `tools/rgbcolours`
 
