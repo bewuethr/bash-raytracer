@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# Test mapping from RGB triplets to terminal colour codes
+
+# Map single RGB component (0-255) to terminal colour component (0-5)
+get_component () {
+    local comp=$1
+    echo $(( comp > 115 ? (comp - 116) / 40 + 2 :
+             comp > 47  ? 1                     : 0 ))
+}
+
+step=34
+
+for (( r = 0; r <= 255; r += step)); do
+    rterm=$(get_component $r)
+    for (( g = 0; g <= 255; g += step)); do
+        gterm=$(get_component $g)
+        for (( b = 0; b <= 255; b += step)); do
+            bterm=$(get_component $b)
+            termcol=$(( 16 + 36 * rterm + 6 * gterm + bterm ))
+            printf "%b" "$(tput setab $termcol)  $(tput sgr0)"
+        done
+        echo
+    done
+done
