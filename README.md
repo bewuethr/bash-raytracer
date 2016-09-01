@@ -10,7 +10,7 @@ A raytracer written in Bash (except for floating point calculations, where I use
 * Auxiliary script to show and label all terminal colours: `tools/showcolours`
 * Auxiliary script to loop over RGB space, convert to terminal colours and display them: `tools/rgbcolours`
 
-Output of these two scripts: `showcolours` (left) and `rgbcolours` (right)
+Output of these two scripts: `showcolours` (left) and `rgbcolours` (right, slightly resized)
 
 ![showcolours](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/showcolours.png)
 ![rgbtest](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/rgbtest.png)
