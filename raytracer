@@ -40,7 +40,6 @@ init_globals () {
     # declare -Ag obj_plane0=(
     #     [p0]="0 0 -1.2"
     #     [n]="0 0 1"
-    #     # [col]=226
     #     [col]=81
     #     [intersect]=intersect_plane
     # )
