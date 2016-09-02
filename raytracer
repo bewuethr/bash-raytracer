@@ -17,7 +17,7 @@ init_globals () {
     scale=$(bc -l <<< "scale=3; x = $fov * 2 * a(1) / 180; s(x)/c(x)")
 
     # Background colour
-    bg_col=38
+    bg_col=$(rgb_to_term 55 163 212)
 
     # Reset colour
     reset=$(tput sgr0)
@@ -26,13 +26,13 @@ init_globals () {
     declare -Ag obj_sphere0=(
         [origin]="0.2 3 1.1"
         [radius]=1.25
-        [col]=46
+        [col]="147 244 136"
         [intersect]=intersect_sphere
     )
     declare -Ag obj_sphere1=(
         [origin]="-1.5 4 0.3"
         [radius]=1.2
-        [col]=81
+        [col]="161 214 220"
         [intersect]=intersect_sphere
     )
     # Plane is not really used any longer - this is just an example of how to
@@ -47,14 +47,14 @@ init_globals () {
         [p0]="-10 0 -1.2"
         [p1]="3.25 10 -1.2"
         [p2]="-10 10 -1.2"
-        [col]=196
+        [col]="195 38 0"
         [intersect]=intersect_triangle
     )
     declare -Ag obj_triangle1=(
         [p0]="-10 0 -1.2"
         [p1]="3.25 0 -1.2"
         [p2]="3.25 10 -1.2"
-        [col]=226
+        [col]="248 231 44"
         [intersect]=intersect_triangle
     )
 
@@ -69,6 +69,22 @@ init_globals () {
 
     # Ray origin in camera coordinates
     ray_origin=(0 0 0)
+}
+
+# Map single RGB component (0-255) to terminal colour component (0-5)
+get_component () {
+    local comp=$1
+    echo $(( comp > 115 ? (comp - 116) / 40 + 2 :
+             comp > 47  ? 1                     : 0 ))
+}
+
+# Map RGB triple to terminal colour
+rgb_to_term () {
+    local rgbcol=($@)
+    local rterm=$(get_component ${rgbcol[0]})
+    local gterm=$(get_component ${rgbcol[1]})
+    local bterm=$(get_component ${rgbcol[2]})
+    echo $(( 16 + 36 * rterm + 6 * gterm + bterm ))
 }
 
 # Transform 3D vector with given matrix - assume row vector and v * M
@@ -300,7 +316,7 @@ trace () {
         t=$("${object[intersect]}" "${o[@]}" "${d[@]}" "$object_name")
         if (( $(bc <<< "$t > 0 && $t < $t_min") )); then
             t_min=$t
-            col=${object[col]}
+            col=$(rgb_to_term "${object[col]}")
         fi
     done
 
