@@ -5,10 +5,11 @@ set -u
 init_globals () {
     # Field of view in degrees, default to 90
     local fov=${1:-90}
+    local shrinkage=$2
 
     # Image dimensions
-    img_w=$(tput cols)
-    img_h=$(tput lines)
+    img_w=$(( 90 / shrinkage ))
+    img_h=$(( 36 / shrinkage ))
 
     # Aspect ratio takes non-square pixel shape into account
     img_ar=$(bc <<< "scale=3; ($img_w / 2) / $img_h")
@@ -45,7 +46,7 @@ init_globals () {
     # )
     declare -Ag obj_triangle0=(
         [p0]="-10 0 -1.2"
-        [p1]="3.25 10 -1.2"
+        [p1]="2.75 10 -1.2"
         [p2]="-10 10 -1.2"
         [col1]="195 38 0"
         [col2]="248 231 44"
@@ -54,8 +55,8 @@ init_globals () {
     )
     declare -Ag obj_triangle1=(
         [p0]="-10 0 -1.2"
-        [p1]="3.25 0 -1.2"
-        [p2]="3.25 10 -1.2"
+        [p1]="2.75 0 -1.2"
+        [p2]="2.75 10 -1.2"
         [col1]="195 38 0"
         [col2]="248 231 44"
         [intersect]=intersect_triangle
@@ -300,7 +301,6 @@ intersect_triangle () {
             /* Ray is parallel to triangle plane */
             print -1
         }
-        print -1
 EOF
 
 }
@@ -321,12 +321,12 @@ trace () {
         if (( $(bc <<< "$t > 0 && $t < $t_min") )); then
             t_min=$t
             if [[ ${object[pattern]:-none} == "checker" ]]; then
-                if (( $(bc <<< "
+                if (( $(bc bc_lib.bc <<< "
                     scale = 3
                     x = ${o[0]} + $t * ${d[0]}
                     y = ${o[1]} + $t * ${d[1]}
                     scale = 0
-                    (x % 2) < 1 && (y % 2) < 1 || (x % 2) > 1 && (y % 2) > 1
+                    (floor(x) + floor(y)) % 2 == 0
                 ") )); then
                     col=$(rgb_to_term "${object[col1]}")
                 else
@@ -341,8 +341,8 @@ trace () {
     echo "${col:-$bg_col}"
 }
 
-# Initialize global variables with field of view
-init_globals 90
+# Initialize global variables with field of view and factor by which output should be shrunk
+init_globals 90 ${1:-1}
 
 ray_origin_world=($(vec_matrix_mult "${ray_origin[@]}" cam_to_world))
 
