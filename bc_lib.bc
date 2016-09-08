@@ -36,3 +36,13 @@ define abs(val) {
         return -val
     }
 }
+
+/* Floor towards next smaller number (and not zero) 
+   pay attention to scale, should be 0 */
+define floor(val) {
+    if (val > 0) {
+        return val - (val % 1)
+    } else {
+        return val - (val % 1) - 1
+    }
+}
