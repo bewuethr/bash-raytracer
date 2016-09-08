@@ -4,6 +4,20 @@ A raytracer written in Bash (except for floating point calculations, where I use
 
 ## Changelog
 
+### 2016/09/07
+
+* Checkerboard texture for triangles (square size should be slightly reduced, and colours are currently inverted from original)
+* Use RGB to terminal colour mapping everywhere
+* Slight adjustment to right end of rectangle in scene
+
+Rendered image:
+
+![rendering5](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20160907.png)
+
+And overlaid on top of the original scene:
+
+![rendering5whitted](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20160907_overlay.png)
+
 ### 2016/09/01
 
 * Groundwork for shading: figure out mapping from RGB triplets to terminal colours, mostly following [this Stack Overflow answer](http://stackoverflow.com/questions/27159322/rgb-values-of-the-colors-in-the-ansi-extended-colors-index-17-255)
