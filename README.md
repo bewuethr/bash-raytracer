@@ -4,6 +4,15 @@ A raytracer written in Bash (except for floating point calculations, where I use
 
 ## Changelog
 
+### 2016/09/10
+
+* Make `rgbcolours` into a sourceable library of test functions
+* Add test function `facing_ratio` to `rgbcolours` to test interpolation between an RGB triple and (0,0,0) for later use with a simple facing ratio shading technique
+
+Testing `facing_ratio` with all the colours of the last rendering, drawing 21 shades each:
+
+![facing_ratio_test](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/facing_ratio_test.png)
+
 ### 2016/09/07
 
 * Checkerboard texture for triangles (square size should be slightly reduced, and colours are currently inverted from original)
