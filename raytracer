@@ -8,8 +8,13 @@ init_globals () {
     local shrinkage=$2
 
     # Image dimensions
-    img_w=$(( 90 / shrinkage ))
-    img_h=$(( 36 / shrinkage ))
+	if [[ $shrinkage == fs ]]; then
+		img_w=$COLUMNS
+		img_h=$LINES
+	else
+		img_w=$(( 90 / shrinkage ))
+		img_h=$(( 36 / shrinkage ))
+	fi
 
     # Aspect ratio takes non-square pixel shape into account
     img_ar=$(bc <<< "scale=3; ($img_w / 2) / $img_h")
