@@ -57,7 +57,6 @@ init_globals () {
         [col2]="248 231 44"
         [intersect]=intersect_triangle
         [pattern]=checker
-        [n]=
     )
     declare -Ag obj_triangle1=(
         [p0]="-10 0 -1.2"
@@ -67,7 +66,6 @@ init_globals () {
         [col2]="248 231 44"
         [intersect]=intersect_triangle
         [pattern]=checker
-        [n]=
     )
 
     # Add normal to objects, where possible
