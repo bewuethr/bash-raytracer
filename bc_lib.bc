@@ -46,3 +46,12 @@ define floor(val) {
         return val - (val % 1) - 1
     }
 }
+
+/* Return larger of two values */
+define max(a, b) {
+    if (a > b) {
+        return a
+    } else {
+        return b
+    }
+}

@@ -57,6 +57,7 @@ init_globals () {
         [col2]="248 231 44"
         [intersect]=intersect_triangle
         [pattern]=checker
+        [n]=
     )
     declare -Ag obj_triangle1=(
         [p0]="-10 0 -1.2"
@@ -66,7 +67,16 @@ init_globals () {
         [col2]="248 231 44"
         [intersect]=intersect_triangle
         [pattern]=checker
+        [n]=
     )
+
+    # Add normal to objects, where possible
+    # Plane already has it, sphere normal depends on hit point
+    local tri_name
+    for tri_name in "${!obj_triangle@}"; do
+        local -n triangle=$tri_name
+        triangle[n]="$(get_tri_normal ${triangle[p0]} ${triangle[p1]} ${triangle[p2]})"
+    done
 
     # Initialize camera-to-world matrix
     declare -Ag cam_to_world
@@ -79,6 +89,34 @@ init_globals () {
 
     # Ray origin in camera coordinates
     ray_origin=(0 0 0)
+}
+
+# Calculate normal of triangle defined by three points
+get_tri_normal () {
+    local p0=($1 $2 $3)
+    local p1=($4 $5 $6)
+    local p2=($7 $8 $9)
+
+    bc bc_lib.bc <<EOF
+        scale = 3
+
+        p0[0] = ${p0[0]}
+        p0[1] = ${p0[1]}
+        p0[2] = ${p0[2]}
+        p1[0] = ${p1[0]}
+        p1[1] = ${p1[1]}
+        p1[2] = ${p1[2]}
+        p2[0] = ${p2[0]}
+        p2[1] = ${p2[1]}
+        p2[2] = ${p2[2]}
+
+        . = vec_diff(p1[], p0[], p0p1[])
+        . = vec_diff(p2[], p0[], p0p2[])
+        . = cross_prod(p0p1[], p0p2[], n[])
+        . = norm(n[])
+
+        print n[0], " ", n[1], " ", n[2]
+EOF
 }
 
 # Map single RGB component (0-255) to terminal colour component (0-5)
@@ -307,7 +345,61 @@ intersect_triangle () {
             print -1
         }
 EOF
+}
 
+#Arguments: origin, direction, distance, sphere name
+# Get normal at sphere hit point
+get_sphere_normal () {
+    local o=($1 $2 $3)
+    local d=($4 $5 $6)
+    local t=$7
+    local obj_name=$8
+    bc <<< "scale = 3; -1 * $4; -1 * $5; -1 * $6"
+}
+
+# Arguments: origin, direction, distance, object name, object colour
+# Shade by incident angle, return RGB triple
+shade_incident () {
+    local o=($1 $2 $3)
+    local d=($4 $5 $6)
+    local t=$7
+    local obj_name=$8
+    local obj_col=($9 ${10} ${11})
+
+    local -n object=$obj_name
+
+    # Get normal at hit point
+    local n
+    case $obj_name in
+        *plane* | *triangle*)
+            n=(${object[n]})
+            ;;
+        *sphere*)
+            n=($(get_sphere_normal "${o[@]}" "${d[@]}" $t $obj_name))
+            ;;
+        *)
+            echo "Illegal object name $obj_name" >&2
+            ;;
+    esac
+
+    bc bc_lib.bc <<EOF
+        /* Calculate facing ratio */
+        d[0]  = ${d[0]} * -1
+        d[1]  = ${d[1]} * -1
+        d[2]  = ${d[2]} * -1
+        n[0]  = ${n[0]}
+        n[1]  = ${n[1]}
+        n[2]  = ${n[2]}
+
+        fac_ratio = max(0, dot_prod(d[], n[]))
+
+        /* Darken colour */
+        r = ${obj_col[0]}
+        g = ${obj_col[1]}
+        b = ${obj_col[2]}
+
+        print fac_ratio * r, " ", fac_ratio * g, " ", fac_ratio * b
+EOF
 }
 
 # Arguments: origin and direction of ray
@@ -340,6 +432,7 @@ trace () {
             else
                 col=$(rgb_to_term "${object[col]}")
             fi
+            # Call shader here - colour should still be an RGB triple
         fi
     done
 
