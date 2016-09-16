@@ -21,7 +21,7 @@ define cross_prod(v1[], v2[], *vcr[]) {
 }
 
 /* Normalize a vector */
-define norm(*v[]) {
+define normalize(*v[]) {
     auto len, i
     len = sqrt(v[0]^2 + v[1]^2 + v[2]^2)
     for (i = 0; i < 3; ++i)

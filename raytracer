@@ -111,7 +111,7 @@ get_tri_normal () {
         . = vec_diff(p1[], p0[], p0p1[])
         . = vec_diff(p2[], p0[], p0p2[])
         . = cross_prod(p0p1[], p0p2[], n[])
-        . = norm(n[])
+        . = normalize(n[])
 
         print n[0], " ", n[1], " ", n[2]
 EOF
@@ -119,7 +119,7 @@ EOF
 
 # Map single RGB component (0-255) to terminal colour component (0-5)
 get_component () {
-    local comp=$1
+    local comp=${1%.*}
     echo $(( comp > 115 ? (comp - 116) / 40 + 2 :
              comp > 47  ? 1                     : 0 ))
 }
@@ -352,7 +352,31 @@ get_sphere_normal () {
     local d=($4 $5 $6)
     local t=$7
     local obj_name=$8
-    bc <<< "scale = 3; -1 * $4; -1 * $5; -1 * $6"
+    local -n sphere=$obj_name
+    local c=(${sphere[origin]})
+
+    bc bc_lib.bc <<EOF
+        scale = 3
+
+        o[0]  = ${o[0]}
+        o[1]  = ${o[1]}
+        o[2]  = ${o[2]}
+        d[0]  = ${d[0]}
+        d[1]  = ${d[1]}
+        d[2]  = ${d[2]}
+        t     = $t
+        c[0]  = ${c[0]}
+        c[1]  = ${c[1]}
+        c[2]  = ${c[2]}
+
+        for (i = 0; i < 3; ++i)
+            p[i] = o[i] + t * d[i]
+
+        . = vec_diff(p[], c[], n[])
+        . = normalize(n[])
+
+        print n[0], " ", n[1], " ", n[2]
+EOF
 }
 
 # Arguments: origin, direction, distance, object name, object colour
@@ -423,17 +447,17 @@ trace () {
                     scale = 0
                     (floor(x) + floor(y)) % 2 == 0
                 ") )); then
-                    col=$(rgb_to_term "${object[col1]}")
+                    col=(${object[col1]})
                 else
-                    col=$(rgb_to_term "${object[col2]}")
+                    col=(${object[col2]})
                 fi
             else
-                col=$(rgb_to_term "${object[col]}")
+                col=(${object[col]})
             fi
-            # Call shader here - colour should still be an RGB triple
+            col=($(shade_incident "${o[@]}" "${d[@]}" $t $object_name "${col[@]}"))
+            col=$(rgb_to_term "${col[@]}")
         fi
     done
-
     echo "${col:-$bg_col}"
 }
 
