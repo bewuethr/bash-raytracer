@@ -47,6 +47,15 @@ define floor(val) {
     }
 }
 
+/* Return smaller of two values */
+define min(a, b) {
+    if (a < b) {
+        return a
+    } else {
+        return b
+    }
+}
+
 /* Return larger of two values */
 define max(a, b) {
     if (a > b) {
