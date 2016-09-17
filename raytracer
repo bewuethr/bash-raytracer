@@ -9,8 +9,8 @@ init_globals () {
 
     # Image dimensions
 	if [[ $shrinkage == fs ]]; then
-		img_w=$COLUMNS
-		img_h=$LINES
+        img_w=$(tput cols)
+        img_h=$(tput lines)
 	else
 		img_w=$(( 90 / shrinkage ))
 		img_h=$(( 36 / shrinkage ))
