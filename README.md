@@ -4,6 +4,12 @@ A raytracer written in Bash (except for floating point calculations, where I use
 
 ## Changelog
 
+### 2016/09/16
+
+* Add incident angle shader: treat camera as light source, shade surfaces darker the smaller the incident angle of the camera ray
+
+![rendering6](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20160916.png)
+
 ### 2016/09/10
 
 * Make `rgbcolours` into a sourceable library of test functions
