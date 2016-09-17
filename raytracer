@@ -213,11 +213,7 @@ intersect_sphere () {
         } else {
             t1 = (-b + sqrt(discr)) / (2 * a)
             t2 = (-b - sqrt(discr)) / (2 * a)
-            if (t1 < t2) {
-                print t1
-            } else {
-                print t2
-            }
+            print min(t1, t2)
         }
 EOF
 }
@@ -270,6 +266,7 @@ intersect_triangle () {
     local p0=(${triangle[p0]})
     local p1=(${triangle[p1]})
     local p2=(${triangle[p2]})
+    local n=(${triangle[n]})
 
     bc bc_lib.bc <<EOF
         scale = 3
@@ -289,11 +286,12 @@ intersect_triangle () {
         p2[0] = ${p2[0]}
         p2[1] = ${p2[1]}
         p2[2] = ${p2[2]}
+        n[0]  = ${n[0]}
+        n[1]  = ${n[1]}
+        n[2]  = ${n[2]}
 
 
         . = vec_diff(p1[], p0[], p0p1[])
-        . = vec_diff(p2[], p0[], p0p2[])
-        . = cross_prod(p0p1[], p0p2[], n[])
         denom = dot_prod(n[], d[])
 
         if (abs(denom) > 10^-6) {
