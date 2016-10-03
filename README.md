@@ -4,6 +4,15 @@ A raytracer written in Bash (except for floating point calculations, where I use
 
 ## Changelog
 
+### 2016/10/03
+
+* Lambertian shading: similar to incident angle shading, but the light source is no longer the camera; the direction of light can be defined freely in space. The light source is distant, i.e., all light rays are parallel.
+* No shadows (yet)
+
+Unlit parts of objects are pitch black, which doesn't look super natural:
+
+![rendering7](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20161003.png)
+
 ### 2016/09/16
 
 * Add incident angle shader: treat camera as light source, shade surfaces darker the smaller the incident angle of the camera ray
