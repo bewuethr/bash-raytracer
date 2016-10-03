@@ -29,6 +29,10 @@ init_globals () {
     reset=$(tput sgr0)
 
     # Objects
+    declare -Ag light0=(
+        [col]="255 255 255"
+        [dir]="-1 0.5 -1"
+    )
     declare -Ag obj_sphere0=(
         [origin]="0.2 3 1.1"
         [radius]=1.25
@@ -87,6 +91,9 @@ init_globals () {
 
     # Ray origin in camera coordinates
     ray_origin=(0 0 0)
+
+    # Normalize light direction vector
+    light0[dir]="$(normalize "${light0[dir]}")"
 }
 
 # Calculate normal of triangle defined by three points
@@ -378,8 +385,8 @@ EOF
 }
 
 # Arguments: origin, direction, distance, object name, object colour
-# Shade by incident angle, return RGB triple
-shade_incident () {
+# Lambertian shading with light0 direction and colour, return RGB triple
+shade_lambert () {
     local o=($1 $2 $3)
     local d=($4 $5 $6)
     local t=$7
@@ -402,23 +409,41 @@ shade_incident () {
             ;;
     esac
 
+    # Make light direction and colour vectors
+    local light_dir=(${light0[dir]})
+    local light_col=(${light0[col]})
+
     bc bc_lib.bc <<EOF
-        /* Calculate facing ratio */
-        d[0]  = ${d[0]} * -1
-        d[1]  = ${d[1]} * -1
-        d[2]  = ${d[2]} * -1
+        scale = 3
+
+        /* Direction of light (inverted )*/
+        l[0] = ${light_dir[0]} * -1
+        l[1] = ${light_dir[1]} * -1
+        l[2] = ${light_dir[2]} * -1
+
+        /* Surface normal */
         n[0]  = ${n[0]}
         n[1]  = ${n[1]}
         n[2]  = ${n[2]}
 
-        fac_ratio = max(0, dot_prod(d[], n[]))
+        /* Colour of light */
+        lr = ${light_col[0]}
+        lg = ${light_col[1]}
+        lb = ${light_col[2]}
 
-        /* Darken colour */
+        /* Object colour */
         r = ${obj_col[0]}
         g = ${obj_col[1]}
         b = ${obj_col[2]}
 
-        print fac_ratio * r, " ", fac_ratio * g, " ", fac_ratio * b
+        lambert = max(0, dot_prod(l[], n[]))
+
+        /* Calculate resulting colour */
+        r_res = r/255 * lr * lambert
+        g_res = g/255 * lg * lambert
+        b_res = b/255 * lb * lambert
+
+        print r_res, " ", g_res, " ", b_res
 EOF
 }
 
@@ -452,7 +477,7 @@ trace () {
             else
                 col=(${object[col]})
             fi
-            col=($(shade_incident "${o[@]}" "${d[@]}" $t $object_name "${col[@]}"))
+            col=($(shade_lambert "${o[@]}" "${d[@]}" $t $object_name "${col[@]}"))
             col=$(rgb_to_term "${col[@]}")
         fi
     done
