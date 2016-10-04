@@ -13,6 +13,13 @@ Unlit parts of objects are pitch black, which doesn't look super natural:
 
 ![rendering7](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20161003.png)
 
+* Add ambient lighting to scene at 20% of intensity of light source; it's a bit much, but the RGB to terminal colour mapping results in all black otherwise (or my mapping is screwed up)
+
+Rendered image:
+
+![rendering8](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20161003a.png)
+
+
 ### 2016/09/16
 
 * Add incident angle shader: treat camera as light source, shade surfaces darker the smaller the incident angle of the camera ray
