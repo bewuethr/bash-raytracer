@@ -385,8 +385,9 @@ EOF
 }
 
 # Arguments: origin, direction, distance, object name, object colour
-# Lambertian shading with light0 direction and colour, return RGB triple
-shade_lambert () {
+# Diffuse shading with light0 direction and colour, return RGB triple
+# Add 20% of light colour for ambient lighting
+shade_diffuse () {
     local o=($1 $2 $3)
     local d=($4 $5 $6)
     local t=$7
@@ -438,10 +439,10 @@ shade_lambert () {
 
         lambert = max(0, dot_prod(l[], n[]))
 
-        /* Calculate resulting colour */
-        r_res = r/255 * lr * lambert
-        g_res = g/255 * lg * lambert
-        b_res = b/255 * lb * lambert
+        /* Calculate resulting colour: ambient plus diffuse */
+        r_res = min(r/255 * lr * (0.2 + lambert), 255)
+        g_res = min(g/255 * lg * (0.2 + lambert), 255)
+        b_res = min(b/255 * lb * (0.2 + lambert), 255)
 
         print r_res, " ", g_res, " ", b_res
 EOF
@@ -477,7 +478,7 @@ trace () {
             else
                 col=(${object[col]})
             fi
-            col=($(shade_lambert "${o[@]}" "${d[@]}" $t $object_name "${col[@]}"))
+            col=($(shade_diffuse "${o[@]}" "${d[@]}" $t $object_name "${col[@]}"))
             col=$(rgb_to_term "${col[@]}")
         fi
     done
