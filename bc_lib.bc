@@ -28,6 +28,13 @@ define normalize(*v[]) {
         v[i] /= len
 }
 
+/* Invert a vector */
+define invert(*v[]) {
+    auto i
+    for (i = 0; i < 3; ++i)
+        v[i] *= -1
+}
+
 /* Absolute value */
 define abs(val) {
     if (val > 0) {

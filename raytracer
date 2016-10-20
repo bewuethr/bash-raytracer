@@ -23,7 +23,7 @@ init_globals () {
     scale=$(bc -l <<< "scale=3; x = $fov * 2 * a(1) / 180; s(x)/c(x)")
 
     # Background colour
-    bg_col=$(rgb_to_term 55 163 212)
+    bg_col="55 163 212"
 
     # Reset colour
     reset=$(tput sgr0)
@@ -182,8 +182,8 @@ normalize () {
 }
 
 # Intersection functions
+# Print distance to origin if ray intersects object and -1 if not
 # Arguments: origin and direction of ray, variable name of object
-# Prints distance to origin if ray intersects object and -1 if not
 
 # Ray and sphere
 intersect_sphere () {
@@ -350,32 +350,23 @@ intersect_triangle () {
 EOF
 }
 
-#Arguments: origin, direction, distance, sphere name
 # Get normal at sphere hit point
+# Arguments: hit point, sphere name
 get_sphere_normal () {
-    local o=($1 $2 $3)
-    local d=($4 $5 $6)
-    local t=$7
-    local obj_name=$8
+    local hit_point=($1 $2 $3)
+    local obj_name=$4
     local -n sphere=$obj_name
     local c=(${sphere[origin]})
 
     bc bc_lib.bc <<EOF
         scale = 3
 
-        o[0]  = ${o[0]}
-        o[1]  = ${o[1]}
-        o[2]  = ${o[2]}
-        d[0]  = ${d[0]}
-        d[1]  = ${d[1]}
-        d[2]  = ${d[2]}
-        t     = $t
+        p[0]  = ${hit_point[0]}
+        p[1]  = ${hit_point[1]}
+        p[2]  = ${hit_point[2]}
         c[0]  = ${c[0]}
         c[1]  = ${c[1]}
         c[2]  = ${c[2]}
-
-        for (i = 0; i < 3; ++i)
-            p[i] = o[i] + t * d[i]
 
         . = vec_diff(p[], c[], n[])
         . = normalize(n[])
@@ -384,48 +375,17 @@ get_sphere_normal () {
 EOF
 }
 
-# Arguments: origin, direction, distance, object name, object colour
-# Diffuse shading with light0 direction and colour, return RGB triple
-# Add 20% of light colour for ambient lighting
-shade_diffuse () {
-    local o=($1 $2 $3)
-    local d=($4 $5 $6)
-    local t=$7
-    local obj_name=$8
-    local obj_col=($9 ${10} ${11})
-
-    local -n object=$obj_name
-
-    # Get normal at hit point
-    local n
-    case $obj_name in
-        *plane* | *triangle*)
-            n=(${object[n]})
-            ;;
-        *sphere*)
-            n=($(get_sphere_normal "${o[@]}" "${d[@]}" $t $obj_name))
-            ;;
-        *)
-            echo "Illegal object name $obj_name" >&2
-            ;;
-    esac
-
-    # Make light direction and colour vectors
-    local light_dir=(${light0[dir]})
+# Ambient shading with light0 direction and colour from iect; return RGB triple
+# Uses 20% of light colour for ambient lighting
+shade_ambient () {
+    # Make light colour a vector
     local light_col=(${light0[col]})
+
+    # Make hitpoint colour a vector
+    local obj_col=(${isect[col]})
 
     bc bc_lib.bc <<EOF
         scale = 3
-
-        /* Direction of light (inverted )*/
-        l[0] = ${light_dir[0]} * -1
-        l[1] = ${light_dir[1]} * -1
-        l[2] = ${light_dir[2]} * -1
-
-        /* Surface normal */
-        n[0]  = ${n[0]}
-        n[1]  = ${n[1]}
-        n[2]  = ${n[2]}
 
         /* Colour of light */
         lr = ${light_col[0]}
@@ -437,31 +397,93 @@ shade_diffuse () {
         g = ${obj_col[1]}
         b = ${obj_col[2]}
 
-        lambert = max(0, dot_prod(l[], n[]))
-
-        /* Calculate resulting colour: ambient plus diffuse */
-        r_res = min(r/255 * lr * (0.2 + lambert), 255)
-        g_res = min(g/255 * lg * (0.2 + lambert), 255)
-        b_res = min(b/255 * lb * (0.2 + lambert), 255)
+        /* Calculate ambient colour */
+        r_res = 0.2 * r / 255 * lr
+        g_res = 0.2 * g / 255 * lg
+        b_res = 0.2 * b / 255 * lb
 
         print r_res, " ", g_res, " ", b_res
 EOF
 }
 
-# Arguments: origin and direction of ray
+# Diffuse shading with light0 direction and colour, return RGB triple
+# Add 20% of light colour for ambient lighting
+# Arguments: origin, direction, distance, object name, object colour
+shade_diffuse () {
+    # Make light direction and colour vectors
+    local light_dir=(${light0[dir]})
+    local light_col=(${light0[col]})
+
+    # Surface normal
+    local n=(${isect[n]})
+
+    # Colour at hit point
+    local obj_col=(${isect[col]})
+
+    # Ambient colour
+    local amb_col=($rgb_colour)
+
+    bc bc_lib.bc <<EOF
+        scale = 3
+
+        /* Direction of light (inverted) */
+        l[0] = ${light_dir[0]} * -1
+        l[1] = ${light_dir[1]} * -1
+        l[2] = ${light_dir[2]} * -1
+
+        /* Surface normal */
+        n[0] = ${n[0]}
+        n[1] = ${n[1]}
+        n[2] = ${n[2]}
+
+        /* Colour of light */
+        lr = ${light_col[0]}
+        lg = ${light_col[1]}
+        lb = ${light_col[2]}
+
+        /* Object colour */
+        r_obj = ${obj_col[0]}
+        g_obj = ${obj_col[1]}
+        b_obj = ${obj_col[2]}
+
+        /* Object ambient colour */
+        r_amb = ${amb_col[0]}
+        g_amb = ${amb_col[1]}
+        b_amb = ${amb_col[2]}
+
+        lambert = max(0, dot_prod(l[], n[]))
+
+        /* Calculate resulting colour: ambient plus diffuse */
+        r_res = min(r_amb + r_obj/255 * lr * lambert, 255)
+        g_res = min(g_amb + g_obj/255 * lg * lambert, 255)
+        b_res = min(b_amb + b_obj/255 * lb * lambert, 255)
+
+        print r_res, " ", g_res, " ", b_res
+EOF
+}
+
 # Tests intersection with objects in scene
-# Prints colour of object if the ray intersects, background colour if not
+# Returns true if ray intersects any object, false if not
+# If flag is set, isect is populated with colour of nearest object, hit point and
+# normal at hit point
+# Arguments: origin and direction of ray; flag to indicate if isect should be populated
 trace () {
     local o=($1 $2 $3)
     local d=($4 $5 $6)
+    local isect_flag=${7:-}
     local t_min=999999
-    local object_name
+    local object_name nearest_object_name
     local t
-    local col
+    local retval=1
     for object_name in "${!obj_@}"; do
         local -n object=$object_name
         t=$("${object[intersect]}" "${o[@]}" "${d[@]}" "$object_name")
         if (( $(bc <<< "$t > 0 && $t < $t_min") )); then
+            retval=0
+
+            # Do we only need to know if we intersect?
+            [[ -z $isect_flag ]] && return 0
+            nearest_object_name=$object_name
             t_min=$t
             if [[ ${object[pattern]:-none} == "checker" ]]; then
                 if (( $(bc bc_lib.bc <<< "
@@ -471,18 +493,42 @@ trace () {
                     scale = 0
                     (floor(x) + floor(y)) % 2 == 0
                 ") )); then
-                    col=(${object[col1]})
+                    isect[col]="${object[col1]}"
                 else
-                    col=(${object[col2]})
+                    isect[col]="${object[col2]}"
                 fi
             else
-                col=(${object[col]})
+                isect[col]="${object[col]}"
             fi
-            col=($(shade_diffuse "${o[@]}" "${d[@]}" $t $object_name "${col[@]}"))
-            col=$(rgb_to_term "${col[@]}")
         fi
     done
-    echo "${col:-$bg_col}"
+
+    # We hit something and have to populate isect
+    if (( retval == 0 )); then
+        local -n nearest_object=$nearest_object_name
+
+        # Calculate hit point
+        isect[hit_point]=$(bc <<< "
+            scale = 3
+            print ${o[0]} + $t_min * ${d[0]}, \" \"
+            print ${o[1]} + $t_min * ${d[1]}, \" \"
+            print ${o[2]} + $t_min * ${d[2]}
+        ")
+
+        # Get normal at hit point
+        case $nearest_object_name in
+            *plane* | *triangle*)
+                isect[n]=${nearest_object[n]}
+                ;;
+            *sphere*)
+                isect[n]=$(get_sphere_normal ${isect[hit_point]} $nearest_object_name)
+                ;;
+            *)
+                echo "Illegal object name $nearest_object_name" >&2
+                ;;
+        esac
+    fi
+    return $retval
 }
 
 # Initialize global variables with field of view and factor by which output should be shrunk
@@ -490,14 +536,41 @@ init_globals 90 ${1:-1}
 
 ray_origin_world=($(vec_matrix_mult "${ray_origin[@]}" cam_to_world))
 
+# Global loop
 for (( i = 0; i < img_h; ++i )); do
     for (( j = 0; j < img_w; ++j )); do
+        declare -A isect=([col]="$bg_col")
         ray_p_cam=($(raster_to_camera $j $i))
         ray_p_world=($(vec_matrix_mult "${ray_p_cam[@]}" cam_to_world))
         ray_direction=($(vec_diff "${ray_p_world[@]}" "${ray_origin_world[@]}"))
         ray_direction=($(normalize "${ray_direction[@]}"))
-        colour=$(trace "${ray_origin_world[@]}" "${ray_direction[@]}")
-        colour=$(tput setab $colour)
+
+        # Check ray-object intersection, populate isect
+        if trace "${ray_origin_world[@]}" "${ray_direction[@]}" get_isect; then
+
+            # Ray hits an object, shade pixel with ambient shader
+            rgb_colour=$(shade_ambient)
+
+            # Calculate shadow ray direction (invert light direction)
+            shray_direction=(${light0[dir]})
+            shray_direction=($(bc bc_lib.bc <<< "
+                scale = 3
+                v[0] = ${shray_direction[0]}
+                v[1] = ${shray_direction[1]}
+                v[2] = ${shray_direction[2]}
+                . = invert(v[])
+                print v[0], \" \", v[1], \" \", v[2]
+            "))
+
+            # Cast shadow ray, don't populate isect
+            if ! trace ${isect[hit_point]} "${shray_direction[@]}"; then
+                rgb_colour=$(shade_diffuse)
+            fi
+        else
+            # Ray doesn't hit any object
+            rgb_colour=$bg_col
+        fi
+        colour=$(tput setab $(rgb_to_term "$rgb_colour"))
         printf "%b" "$colour $reset"
     done
     echo
