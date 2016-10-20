@@ -1,0 +1,5 @@
+#!/bin/bash
+
+sed -i '/^[^ ]\+ () {/a\
+    echo "Entering $FUNCNAME" >&2 # DEBUG
+' raytracer
