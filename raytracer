@@ -562,8 +562,18 @@ for (( i = 0; i < img_h; ++i )); do
                 print v[0], \" \", v[1], \" \", v[2]
             "))
 
+            # Add bias to hitpoint to avoid self-intersection
+            hit_point=(${isect[hit_point]})
+            n=(${isect[n]})
+            bias_hit_point=$(bc <<< "
+                scale = 3
+                print ${hit_point[0]} + 0.002 * ${n[0]}, \" \"
+                print ${hit_point[1]} + 0.002 * ${n[1]}, \" \"
+                print ${hit_point[2]} + 0.002 * ${n[2]}
+            ")
+
             # Cast shadow ray, don't populate isect
-            if ! trace ${isect[hit_point]} "${shray_direction[@]}"; then
+            if ! trace $bias_hit_point "${shray_direction[@]}"; then
                 rgb_colour=$(shade_diffuse)
             fi
         else
