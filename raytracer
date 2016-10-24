@@ -12,8 +12,8 @@ init_globals () {
         img_w=$(tput cols)
         img_h=$(tput lines)
 	else
-		img_w=$(( 90 / shrinkage ))
-		img_h=$(( 36 / shrinkage ))
+		img_w=$(( 104 / shrinkage ))
+		img_h=$(( 34 / shrinkage ))
 	fi
 
     # Aspect ratio takes non-square pixel shape into account
@@ -31,7 +31,7 @@ init_globals () {
     # Objects
     declare -Ag light0=(
         [col]="255 255 255"
-        [dir]="-1 1 -1"
+        [dir]="-0.1 0.2 -1"
     )
     declare -Ag obj_sphere0=(
         [origin]="0.2 3 1.1"

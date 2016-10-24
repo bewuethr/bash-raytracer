@@ -4,6 +4,17 @@ A raytracer written in Bash (except for floating point calculations, where I use
 
 ## Changelog
 
+### 2016/10/24
+
+* Shadows: every hitpoint checks if there is an object covering the directional light; if there is, the point is shaded with just ambient colour (20% of light intensity). If there is nothing covering the light, diffuse colouring is added. I've also tweaked the light direction a little.
+* New resolution: I've switched my system (no more MSYS2 Bash under Windows, proper Ubuntu now!) and have adjusted the default resolution to match the size of the original Whitted picture.
+
+Because there aren't many colours available, the shadows tend to be very dark and "dark yellow" on the checkered floor becomes "pitch black":
+
+![rendering8](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20161024.png)
+
+I plan on switching to true colour soon, which should get rid of this problem.
+
 ### 2016/10/03
 
 * Lambertian shading: similar to incident angle shading, but the light source is no longer the camera; the direction of light can be defined freely in space. The light source is distant, i.e., all light rays are parallel.
