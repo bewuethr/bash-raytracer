@@ -428,7 +428,7 @@ EOF
 }
 
 # Ambient shading with light0 direction and colour from iect; return RGB triple
-# Uses 20% of light colour for ambient lighting
+# Uses 10% of light colour for ambient lighting
 shade_ambient () {
     # Make light colour a vector
     local light_col=(${light0[col]})
@@ -632,7 +632,11 @@ for (( i = 0; i < img_h; ++i )); do
             # Ray doesn't hit any object
             rgb_colour=$bg_col
         fi
-        colour=$(tput setab $(rgb_to_term "$rgb_colour"))
+        if (( bit8 == 0 )); then
+            printf -v colour "\e[48;2;%.0f;%.0f;%0.fm" $rgb_colour
+        else
+            colour=$(tput setab $(rgb_to_term "$rgb_colour"))
+        fi
         printf "%b" "$colour $reset"
     done
     echo
