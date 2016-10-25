@@ -23,7 +23,7 @@ init_globals () {
     # Set defaults
     local fov=90        # Field of view
     local shrinkage=1   # Scaling factor for image size
-    local bit8=0        # Use 8-bit colours instead of 24-bit colours?
+    bit8=0        # Use 8-bit colours instead of 24-bit colours?
 
     # Parse command line options
     local opt
@@ -450,17 +450,17 @@ shade_ambient () {
         b = ${obj_col[2]}
 
         /* Calculate ambient colour */
-        r_res = 0.2 * r / 255 * lr
-        g_res = 0.2 * g / 255 * lg
-        b_res = 0.2 * b / 255 * lb
+        r_res = 0.1 * r / 255 * lr
+        g_res = 0.1 * g / 255 * lg
+        b_res = 0.1 * b / 255 * lb
 
         print r_res, " ", g_res, " ", b_res
 EOF
 }
 
 # Diffuse shading with light0 direction and colour, return RGB triple
-# Add 20% of light colour for ambient lighting
-# Arguments: origin, direction, distance, object name, object colour
+# Add diffuse colour to ambient colour
+# Arguments: uses all global objects
 shade_diffuse () {
     # Make light direction and colour vectors
     local light_dir=(${light0[dir]})
