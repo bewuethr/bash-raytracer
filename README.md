@@ -4,6 +4,19 @@ A raytracer written in Bash (except for floating point calculations, where I use
 
 ## Changelog
 
+### 2016/10/25
+
+* Command line options and usage text: simpler setup for size/fullscreen, field of view and colours settings, using `getopts` and this syntax:
+
+        raytracer [-hf8] [-v FOV] [-s FACTOR]
+
+* Default to 24-bit colours and fall back to 8-bit colours when the new `-8` option is used
+* Reduce intensity of ambient lighting to 10%
+
+Colours in the shadows are now discernible:
+
+![rendering9](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20161025.png)
+
 ### 2016/10/24
 
 * Shadows: every hitpoint checks if there is an object covering the directional light; if there is, the point is shaded with just ambient colour (20% of light intensity). If there is nothing covering the light, diffuse colouring is added. I've also tweaked the light direction a little.
