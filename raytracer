@@ -1,20 +1,72 @@
 #!/bin/bash
 set -u
 
+# Show usage instructions
+show_help () {
+cat <<EOF
+Usage: ${0##*/} [-hf8] [-v FOV] [-s FACTOR]
+Render the Whitted ray tracing scene using terminal escape codes.
+
+    -h         display this help text and exit
+    -f         use the full terminal window instead of the standard 104x34
+               characters
+    -s FACTOR  shrink rendered image by factor FACTOR
+    -v FOV     use field of view FOV (in degrees) instead of the default 90
+    -8         use 8-bit colours instead of 24-bit colours
+
+The -f and -s options override each other silently; the last one issued is used.
+EOF
+}
+
 # Global variables
 init_globals () {
-    # Field of view in degrees, default to 90
-    local fov=${1:-90}
-    local shrinkage=$2
+    # Set defaults
+    local fov=90        # Field of view
+    local shrinkage=1   # Scaling factor for image size
+    local bit8=0        # Use 8-bit colours instead of 24-bit colours?
+
+    # Parse command line options
+    local opt
+
+    while getopts ":hv:s:f8" opt; do
+        case "$opt" in
+            h)
+                show_help
+                exit 0
+                ;;
+            v)
+                fov=$OPTARG
+                ;;
+            s)
+                shrinkage=$OPTARG
+                ;;
+            f)
+                shrinkage='fullscreen'
+                ;;
+            8)
+                bit8=1
+                ;;
+            \?)
+                echo "Invalid option: -$OPTARG" >&2
+                show_help >&2
+                exit 1
+                ;;
+            :)
+                echo "Option -$OPTARG requires an argument." >&2
+                show_help >&2
+                exit 1
+                ;;
+        esac
+    done
 
     # Image dimensions
-	if [[ $shrinkage == fs ]]; then
+    if [[ $shrinkage == fullscreen ]]; then
         img_w=$(tput cols)
         img_h=$(tput lines)
-	else
-		img_w=$(( 104 / shrinkage ))
-		img_h=$(( 34 / shrinkage ))
-	fi
+    else
+        img_w=$(( 104 / shrinkage ))
+        img_h=$(( 34 / shrinkage ))
+    fi
 
     # Aspect ratio takes non-square pixel shape into account
     img_ar=$(bc <<< "scale=3; ($img_w / 2) / $img_h")
@@ -531,8 +583,8 @@ trace () {
     return $retval
 }
 
-# Initialize global variables with field of view and factor by which output should be shrunk
-init_globals 90 ${1:-1}
+# Read command line options and initialize global variables
+init_globals "$@"
 
 ray_origin_world=($(vec_matrix_mult "${ray_origin[@]}" cam_to_world))
 
