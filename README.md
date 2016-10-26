@@ -1,25 +1,25 @@
 # Bash Raytracer
 
-A raytracer written in Bash (except for floating point calculations, where I use `bc`). It requires a terminal emulator capable of displaying 256 colours.
+A raytracer written in Bash (except for floating point calculations, where I use `bc`). It requires a terminal emulator capable of displaying 256 colours (using the `-8` option) or true colour.
 
-## Changelog
+## Change log
 
 ### 2016/10/25
 
-* Command line options and usage text: simpler setup for size/fullscreen, field of view and colours settings, using `getopts` and this syntax:
+* Command line options and usage text: simpler setup for size / full screen, field of view and colours settings, using `getopts` and this syntax:
 
         raytracer [-hf8] [-v FOV] [-s FACTOR]
 
 * Default to 24-bit colours and fall back to 8-bit colours when the new `-8` option is used
 * Reduce intensity of ambient lighting to 10%
 
-Colours in the shadows are now discernible and gradiens look a bit smoother:
+Colours in the shadows are now discernible and gradients look a bit smoother:
 
 ![rendering9](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20161025.png)
 
 ### 2016/10/24
 
-* Shadows: every hitpoint checks if there is an object covering the directional light; if there is, the point is shaded with just ambient colour (20% of light intensity). If there is nothing covering the light, diffuse colouring is added. I've also tweaked the light direction a little.
+* Shadows: every hit point checks if there is an object covering the directional light; if there is, the point is shaded with just ambient colour (20% of light intensity). If there is nothing covering the light, diffuse colouring is added. I've also tweaked the light direction a little.
 * New resolution: I've switched my system (no more MSYS2 Bash under Windows, proper Ubuntu now!) and have adjusted the default resolution to match the size of the original Whitted picture.
 
 Because there aren't many colours available, the shadows tend to be very dark and "dark yellow" on the checkered floor becomes "pitch black":
@@ -61,7 +61,7 @@ Testing `facing_ratio` with all the colours of the last rendering, drawing 21 sh
 
 ### 2016/09/07
 
-* Checkerboard texture for triangles (square size should be slightly reduced, and colours are currently inverted from original)
+* Checker board texture for triangles (square size should be slightly reduced, and colours are currently inverted from original)
 * Use RGB to terminal colour mapping everywhere
 * Slight adjustment to right end of rectangle in scene
 
@@ -79,7 +79,7 @@ And overlaid on top of the original scene:
 * Auxiliary script to show and label all terminal colours: `tools/showcolours`
 * Auxiliary script to loop over RGB space, convert to terminal colours and display them: `tools/rgbcolours`
 
-Output of these two scripts: `showcolours` (left) and `rgbcolours` (right, slightly resized)
+Output of these two scripts: `showcolours` (left) and `rgbcolours` (right, slightly re-sized)
 
 ![showcolours](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/showcolours.png)
 ![rgbtest](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/rgbtest.png)
@@ -133,7 +133,7 @@ Overlaid on top of the original Whitted scene:
 
 * First version capable of generating an image
 * Simple raycasting: test for intersection, colouring pixel in sphere colour if ray intersects sphere and background colour if not (no shading)
-* Camera ray generation with hardcoded camera position and scene (a single sphere)
+* Camera ray generation with hard-coded camera position and scene (a single sphere)
 * Intersection test is just true/false and doesn't return closest intersection, so clipping doesn't work yet
 * Image size is whatever the terminal size is when starting the raytracer
 * No reflection, refraction, phong or other illumination models, shadows, shapes other than spheres, depth of field effect, motion blur, bump or environment mapping, subsurface scattering, ... you name it.
