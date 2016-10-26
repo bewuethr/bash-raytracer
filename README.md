@@ -13,7 +13,7 @@ A raytracer written in Bash (except for floating point calculations, where I use
 * Default to 24-bit colours and fall back to 8-bit colours when the new `-8` option is used
 * Reduce intensity of ambient lighting to 10%
 
-Colours in the shadows are now discernible:
+Colours in the shadows are now discernible and gradiens look a bit smoother:
 
 ![rendering9](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20161025.png)
 
