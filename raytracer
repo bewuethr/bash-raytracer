@@ -103,9 +103,9 @@ init_globals () {
 
     # Normalize directional light direction vectors
     local light_name
-    for light_name in "${!dight@}"; do
+    for light_name in "${!light@}"; do
         local -n light=$light_name
-        if (( light[isdir] == 1 )); then
+        if [[ ${light[type]} == 'dir' ]]; then
             light[dir]="$(normalize "${light[dir]}")"
         fi
     done

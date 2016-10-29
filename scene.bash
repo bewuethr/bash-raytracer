@@ -5,7 +5,7 @@ bg_col="55 163 212"
 declare -Ag light0=(
     [col]="255 255 255"
     [dir]="-0.1 0.2 -1"
-    [isdir]=1
+    [type]='dir'
 )
 
 # Objects
