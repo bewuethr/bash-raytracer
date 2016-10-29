@@ -142,16 +142,22 @@ EOF
 # Map single RGB component (0-255) to terminal colour component (0-5)
 get_component () {
     local comp=${1%.*}
-    echo $(( comp > 115 ? (comp - 116) / 40 + 2 :
-             comp > 47  ? 1                     : 0 ))
+    if (( comp > 115 )); then
+        echo $(( (comp - 116) / 40 + 2 ))
+    elif (( comp > 47 )); then
+        echo 1
+    else
+        echo 0
+    fi
 }
 
 # Map RGB triple to terminal colour
 rgb_to_term () {
     local rgbcol=($@)
-    local rterm=$(get_component ${rgbcol[0]})
-    local gterm=$(get_component ${rgbcol[1]})
-    local bterm=$(get_component ${rgbcol[2]})
+    local rterm gterm bterm
+    rterm=$(get_component "${rgbcol[0]}")
+    gterm=$(get_component "${rgbcol[1]}")
+    bterm=$(get_component "${rgbcol[2]}")
     echo $(( 16 + 36 * rterm + 6 * gterm + bterm ))
 }
 
@@ -159,20 +165,20 @@ rgb_to_term () {
 vec_matrix_mult () {
     local v=($1 $2 $3) # The vector
     local -n M=$4      # The matrix
-    echo "$(bc <<< "scale=3;
+    bc <<< "scale=3;
         ${v[0]} * ${M[0,0]} + ${v[1]} * ${M[1,0]} + ${v[2]} * ${M[2,0]} + ${M[3,0]}
         ${v[0]} * ${M[0,1]} + ${v[1]} * ${M[1,1]} + ${v[2]} * ${M[2,1]} + ${M[3,1]}
-        ${v[0]} * ${M[0,2]} + ${v[1]} * ${M[1,2]} + ${v[2]} * ${M[2,2]} + ${M[3,2]}")"
+        ${v[0]} * ${M[0,2]} + ${v[1]} * ${M[1,2]} + ${v[2]} * ${M[2,2]} + ${M[3,2]}"
 }
 
 # Subtract the second vector from the first vector
 vec_diff () {
     local v1=($1 $2 $3)
     local v2=($4 $5 $6)
-    echo "$(bc <<< "scale=3
+    bc <<< "scale=3
         ${v1[0]} - ${v2[0]}
         ${v1[1]} - ${v2[1]}
-        ${v1[2]} - ${v2[2]}")"
+        ${v1[2]} - ${v2[2]}"
 }
 
 # Transform x,y raster coordinates to camera coordinates
@@ -181,19 +187,19 @@ raster_to_camera () {
     local x=$1
     local y=$2
 
-    echo "$(bc <<< "scale=3
+    bc <<< "scale=3
         (2 * ($x + 0.5) / $img_w - 1) * $img_ar * $scale
-        1 - 2 * ($y + 0.5) / $img_h * $scale")
-        -1"
+        1 - 2 * ($y + 0.5) / $img_h * $scale"
+    echo -1
 }
 
 # Normalize argument vector to unit length
 normalize () {
     local v=($@)
-    echo "$(bc <<< "scale=3; len = sqrt(${v[0]}^2 + ${v[1]}^2 + ${v[2]}^2)
+    bc <<< "scale=3; len = sqrt(${v[0]}^2 + ${v[1]}^2 + ${v[2]}^2)
         ${v[0]} / len
         ${v[1]} / len
-        ${v[2]} / len")"
+        ${v[2]} / len"
 }
 
 # Intersection functions
@@ -536,7 +542,7 @@ trace () {
                 isect[n]=${nearest_object[n]}
                 ;;
             *sphere*)
-                isect[n]=$(get_sphere_normal ${isect[hit_point]} $nearest_object_name)
+                isect[n]=$(get_sphere_normal ${isect[hit_point]} "$nearest_object_name")
                 ;;
             *)
                 echo "Illegal object name $nearest_object_name" >&2
@@ -598,7 +604,7 @@ for (( i = 0; i < img_h; ++i )); do
         if (( bit8 == 0 )); then
             printf -v colour "\e[48;2;%.0f;%.0f;%0.fm" $rgb_colour
         else
-            colour=$(tput setab $(rgb_to_term "$rgb_colour"))
+            colour=$(tput setab "$(rgb_to_term "$rgb_colour")")
         fi
         printf "%b" "$colour $reset"
     done
