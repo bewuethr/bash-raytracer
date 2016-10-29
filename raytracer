@@ -4,7 +4,7 @@ set -u
 # Show usage instructions
 show_help () {
 cat <<EOF
-Usage: ${0##*/} [-hf8] [-v FOV] [-s FACTOR]
+Usage: ${0##*/} [-hf8] [-s FACTOR] [-v FOV] [-d FILE]
 Render the Whitted ray tracing scene using terminal escape codes.
 
     -h         display this help text and exit
@@ -12,6 +12,7 @@ Render the Whitted ray tracing scene using terminal escape codes.
                characters
     -s FACTOR  shrink rendered image by factor FACTOR
     -v FOV     use field of view FOV (in degrees) instead of the default 90
+    -d FILE    use scene description in file FILE instead of the default scene.bash
     -8         use 8-bit colours instead of 24-bit colours
 
 The -f and -s options override each other silently; the last one issued is used.
@@ -21,14 +22,14 @@ EOF
 # Global variables
 init_globals () {
     # Set defaults
-    local fov=90        # Field of view
-    local shrinkage=1   # Scaling factor for image size
-    bit8=0        # Use 8-bit colours instead of 24-bit colours?
+    local fov=90                # Field of view
+    local shrinkage=1           # Scaling factor for image size
+    local scene='scene.bash'    # Scene file
+    bit8=0                      # Use 8-bit colours instead of 24-bit colours?
 
     # Parse command line options
     local opt
-
-    while getopts ":hv:s:f8" opt; do
+    while getopts ":hv:s:fd:8" opt; do
         case "$opt" in
             h)
                 show_help
@@ -42,6 +43,9 @@ init_globals () {
                 ;;
             f)
                 shrinkage='fullscreen'
+                ;;
+            d)
+                scene=$OPTARG
                 ;;
             8)
                 bit8=1
@@ -74,55 +78,17 @@ init_globals () {
     # Scale for field of view; pi is 4 * atan(1)
     scale=$(bc -l <<< "scale=3; x = $fov * 2 * a(1) / 180; s(x)/c(x)")
 
-    # Background colour
-    bg_col="55 163 212"
-
     # Reset colour
     reset=$(tput sgr0)
 
-    # Objects
-    declare -Ag light0=(
-        [col]="255 255 255"
-        [dir]="-0.1 0.2 -1"
-    )
-    declare -Ag obj_sphere0=(
-        [origin]="0.2 3 1.1"
-        [radius]=1.25
-        [col]="147 244 136"
-        [intersect]=intersect_sphere
-    )
-    declare -Ag obj_sphere1=(
-        [origin]="-1.5 4 0.3"
-        [radius]=1.2
-        [col]="161 214 220"
-        [intersect]=intersect_sphere
-    )
-    # Plane is not really used any longer - this is just an example of how to
-    # declare one
-    # declare -Ag obj_plane0=(
-    #     [p0]="0 0 -1.2"
-    #     [n]="0 0 1"
-    #     [col]=81
-    #     [intersect]=intersect_plane
-    # )
-    declare -Ag obj_triangle0=(
-        [p0]="-10 0 -1.2"
-        [p1]="2.75 10 -1.2"
-        [p2]="-10 10 -1.2"
-        [col1]="195 38 0"
-        [col2]="248 231 44"
-        [intersect]=intersect_triangle
-        [pattern]=checker
-    )
-    declare -Ag obj_triangle1=(
-        [p0]="-10 0 -1.2"
-        [p1]="2.75 0 -1.2"
-        [p2]="2.75 10 -1.2"
-        [col1]="195 38 0"
-        [col2]="248 231 44"
-        [intersect]=intersect_triangle
-        [pattern]=checker
-    )
+    # Load scene
+    if [[ -r $scene ]]; then
+        source "$scene"
+    else
+        echo "Can't read scene description file, \"$scene\"" >&2
+        show_help >&2
+        exit 1
+    fi
 
     # Add normal to objects, where possible
     # Plane already has it, sphere normal depends on hit point
@@ -132,20 +98,17 @@ init_globals () {
         triangle[n]="$(get_tri_normal ${triangle[p0]} ${triangle[p1]} ${triangle[p2]})"
     done
 
-    # Initialize camera-to-world matrix
-    declare -Ag cam_to_world
-    cam_to_world=(
-        [0,0]=1 [0,1]=0  [0,2]=0 [0,3]=0
-        [1,0]=0 [1,1]=0  [1,2]=1 [1,3]=0
-        [2,0]=0 [2,1]=-1 [2,2]=0 [2,3]=0
-        [3,0]=0 [3,1]=0  [3,2]=1 [3,3]=1
-    )
-
     # Ray origin in camera coordinates
     ray_origin=(0 0 0)
 
-    # Normalize light direction vector
-    light0[dir]="$(normalize "${light0[dir]}")"
+    # Normalize directional light direction vectors
+    local light_name
+    for light_name in "${!dight@}"; do
+        local -n light=$light_name
+        if (( light[isdir] == 1 )); then
+            light[dir]="$(normalize "${light[dir]}")"
+        fi
+    done
 }
 
 # Calculate normal of triangle defined by three points
