@@ -2,10 +2,15 @@
 bg_col="55 163 212"
 
 # Lights
-declare -Ag light0=(
+declare -Ag lt_light0=(
     [col]="255 255 255"
-    [dir]="-0.1 0.2 -1"
-    [type]='dir'
+    [dir]="-2 0.2 -1"
+    [type]="dir"
+)
+declare -Ag lt_light1=(
+    [col]="255 255 255"
+    [location]="2 7 8"
+    [type]="point"
 )
 
 # Objects

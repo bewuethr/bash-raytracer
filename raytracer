@@ -103,7 +103,7 @@ init_globals () {
 
     # Normalize directional light direction vectors
     local light_name
-    for light_name in "${!light@}"; do
+    for light_name in "${!lt_@}"; do
         local -n light=$light_name
         if [[ ${light[type]} == 'dir' ]]; then
             light[dir]="$(normalize "${light[dir]}")"
@@ -187,10 +187,10 @@ raster_to_camera () {
     local x=$1
     local y=$2
 
-    bc <<< "scale=3
+    bc <<< "scale = 3
         (2 * ($x + 0.5) / $img_w - 1) * $img_ar * $scale
-        1 - 2 * ($y + 0.5) / $img_h * $scale"
-    echo -1
+        1 - 2 * ($y + 0.5) / $img_h * $scale
+        -1"
 }
 
 # Normalize argument vector to unit length
@@ -396,44 +396,60 @@ get_sphere_normal () {
 EOF
 }
 
-# Ambient shading with light0 direction and colour from iect; return RGB triple
-# Uses 10% of light colour for ambient lighting
+# Ambient shading with colours from isect and lights; return RGB triple
+# Uses 5% of light colour for ambient lighting
 shade_ambient () {
-    # Make light colour a vector
-    local light_col=(${light0[col]})
-
     # Make hitpoint colour a vector
     local obj_col=(${isect[col]})
+    local res_col=(0 0 0)   # Resulting colour
 
-    bc bc_lib.bc <<EOF
-        scale = 3
+    # Loop over lights
+    local light_name
+    for light_name in "${!lt_@}"; do
+        local -n light=$light_name
 
-        /* Colour of light */
-        lr = ${light_col[0]}
-        lg = ${light_col[1]}
-        lb = ${light_col[2]}
+        # Make light colour a vector
+        local light_col=(${light[col]})
 
-        /* Object colour */
-        r = ${obj_col[0]}
-        g = ${obj_col[1]}
-        b = ${obj_col[2]}
+        # Add contribution to resulting colour
+        res_col=($(bc bc_lib.bc <<EOF
+            scale = 3
 
-        /* Calculate ambient colour */
-        r_res = 0.1 * r / 255 * lr
-        g_res = 0.1 * g / 255 * lg
-        b_res = 0.1 * b / 255 * lb
+            /* Current resulting colour */
+            r_res = ${res_col[0]}
+            g_res = ${res_col[1]}
+            b_res = ${res_col[2]}
 
-        print r_res, " ", g_res, " ", b_res
+            /* Colour of light */
+            lr = ${light_col[0]}
+            lg = ${light_col[1]}
+            lb = ${light_col[2]}
+
+            /* Object colour */
+            r = ${obj_col[0]}
+            g = ${obj_col[1]}
+            b = ${obj_col[2]}
+
+            /* Add ambient colour contribution to resulting colour */
+            r_res += 0.05 * r / 255 * lr
+            g_res += 0.05 * g / 255 * lg
+            b_res += 0.05 * b / 255 * lb
+
+            print r_res, " ", g_res, " ", b_res
 EOF
+        ))
+    done
+
+    echo "${res_col[@]}"
 }
 
-# Diffuse shading with light0 direction and colour, return RGB triple
-# Add diffuse colour to ambient colour
-# Arguments: uses all global objects
+# Diffuse shading using light direction and colour; return RGB triple
+# Add diffuse colour contribution of light
+# Arguments: light direction (shadow ray direction) and light colour
 shade_diffuse () {
     # Make light direction and colour vectors
-    local light_dir=(${light0[dir]})
-    local light_col=(${light0[col]})
+    local light_dir=($1 $2 $3)
+    local light_col=($4 $5 $6)
 
     # Surface normal
     local n=(${isect[n]})
@@ -441,16 +457,16 @@ shade_diffuse () {
     # Colour at hit point
     local obj_col=(${isect[col]})
 
-    # Ambient colour
-    local amb_col=($rgb_colour)
+    # Colour before this contribution
+    local cur_col=($rgb_colour)
 
     bc bc_lib.bc <<EOF
         scale = 3
 
-        /* Direction of light (inverted) */
-        l[0] = ${light_dir[0]} * -1
-        l[1] = ${light_dir[1]} * -1
-        l[2] = ${light_dir[2]} * -1
+        /* Direction of light */
+        l[0] = ${light_dir[0]}
+        l[1] = ${light_dir[1]}
+        l[2] = ${light_dir[2]}
 
         /* Surface normal */
         n[0] = ${n[0]}
@@ -468,16 +484,16 @@ shade_diffuse () {
         b_obj = ${obj_col[2]}
 
         /* Object ambient colour */
-        r_amb = ${amb_col[0]}
-        g_amb = ${amb_col[1]}
-        b_amb = ${amb_col[2]}
+        r_cur = ${cur_col[0]}
+        g_cur = ${cur_col[1]}
+        b_cur = ${cur_col[2]}
 
         lambert = max(0, dot_prod(l[], n[]))
 
-        /* Calculate resulting colour: ambient plus diffuse */
-        r_res = min(r_amb + r_obj/255 * lr * lambert, 255)
-        g_res = min(g_amb + g_obj/255 * lg * lambert, 255)
-        b_res = min(b_amb + b_obj/255 * lb * lambert, 255)
+        /* Calculate resulting colour: current plus diffuse */
+        r_res = min(r_cur + r_obj/255 * lr * lambert, 255)
+        g_res = min(g_cur + g_obj/255 * lg * lambert, 255)
+        b_res = min(b_cur + b_obj/255 * lb * lambert, 255)
 
         print r_res, " ", g_res, " ", b_res
 EOF
@@ -531,9 +547,9 @@ trace () {
         # Calculate hit point
         isect[hit_point]=$(bc <<< "
             scale = 3
-            print ${o[0]} + $t_min * ${d[0]}, \" \"
-            print ${o[1]} + $t_min * ${d[1]}, \" \"
-            print ${o[2]} + $t_min * ${d[2]}
+            print ${o[0]} + $t_min * ${d[0]}, \" \", \
+                ${o[1]} + $t_min * ${d[1]}, \" \", \
+                ${o[2]} + $t_min * ${d[2]}
         ")
 
         # Get normal at hit point
@@ -572,31 +588,42 @@ for (( i = 0; i < img_h; ++i )); do
             # Ray hits an object, shade pixel with ambient shader
             rgb_colour=$(shade_ambient)
 
-            # Calculate shadow ray direction (invert light direction)
-            shray_direction=(${light0[dir]})
-            shray_direction=($(bc bc_lib.bc <<< "
-                scale = 3
-                v[0] = ${shray_direction[0]}
-                v[1] = ${shray_direction[1]}
-                v[2] = ${shray_direction[2]}
-                . = invert(v[])
-                print v[0], \" \", v[1], \" \", v[2]
-            "))
-
             # Add bias to hitpoint to avoid self-intersection
             hit_point=(${isect[hit_point]})
             n=(${isect[n]})
             bias_hit_point=$(bc <<< "
                 scale = 3
-                print ${hit_point[0]} + 0.002 * ${n[0]}, \" \"
-                print ${hit_point[1]} + 0.002 * ${n[1]}, \" \"
-                print ${hit_point[2]} + 0.002 * ${n[2]}
+                print ${hit_point[0]} + 0.002 * ${n[0]}, \" \", \
+                    ${hit_point[1]} + 0.002 * ${n[1]}, \" \", \
+                    ${hit_point[2]} + 0.002 * ${n[2]}
             ")
 
-            # Cast shadow ray, don't populate isect
-            if ! trace $bias_hit_point "${shray_direction[@]}"; then
-                rgb_colour=$(shade_diffuse)
-            fi
+            # Loop over lights and cast shadow rays
+            for light_name in "${!lt_@}"; do
+                declare -n light=$light_name
+
+                # For directional lights: invert direction
+                if [[ ${light[type]} == 'dir' ]]; then
+                    shray_direction=(${light[dir]})
+                    shray_direction=($(bc bc_lib.bc <<< "
+                        scale = 3
+                        v[0] = ${shray_direction[0]}
+                        v[1] = ${shray_direction[1]}
+                        v[2] = ${shray_direction[2]}
+                        . = invert(v[])
+                        print v[0], \" \", v[1], \" \", v[2]
+                    "))
+                else
+                    # It's a point light
+                    shray_direction=($(vec_diff ${light[location]} ${isect[hit_point]}))
+                    shray_direction=($(normalize "${shray_direction[@]}"))
+                fi
+
+                # Cast shadow ray, don't populate isect
+                if ! trace $bias_hit_point "${shray_direction[@]}"; then
+                    rgb_colour=$(shade_diffuse "${shray_direction[@]}" ${light[col]})
+                fi
+            done
         else
             # Ray doesn't hit any object
             rgb_colour=$bg_col
