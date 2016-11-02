@@ -4,6 +4,17 @@ A raytracer written in Bash (except for floating point calculations, where I use
 
 ## Change log
 
+### 2016/11/01
+
+* Add option to use multiple lights instead of single light source
+* Add new light source type: point lights
+* Factor out scene description into separate file for improved tinkering
+* Contribution of ambient lights reduced to just 5%
+
+Test scene with one directional light and one point light source (notice differing levels of shadow intensity):
+
+![rendering10](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20161101.png)
+
 ### 2016/10/25
 
 * Command line options and usage text: simpler setup for size / full screen, field of view and colours settings, using `getopts` and this syntax:
