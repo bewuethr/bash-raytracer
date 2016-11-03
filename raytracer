@@ -501,14 +501,20 @@ EOF
 
 # Tests intersection with objects in scene
 # Returns true if ray intersects any object, false if not
-# If flag is set, isect is populated with colour of nearest object, hit point and
+# If t_min is not set to $7, isect is populated with colour of nearest object, hit point and
 # normal at hit point
+# If $7 is set, we have a shadow ray with a given max distance to the light source
 # Arguments: origin and direction of ray; flag to indicate if isect should be populated
 trace () {
     local o=($1 $2 $3)
     local d=($4 $5 $6)
-    local isect_flag=${7:-}
-    local t_min=999999
+    local t_min=${7:-999999}
+    local isect_flag
+    if [[ $t_min == 999999 ]]; then
+        isect_flag=1    # Populate isect
+    else
+        isect_flag=0    # Don't populate isect
+    fi
     local object_name nearest_object_name
     local t
     local retval=1
@@ -519,7 +525,7 @@ trace () {
             retval=0
 
             # Do we only need to know if we intersect?
-            [[ -z $isect_flag ]] && return 0
+            (( isect_flag == 0 )) && return 0
             nearest_object_name=$object_name
             t_min=$t
             if [[ ${object[pattern]:-none} == "checker" ]]; then
@@ -583,7 +589,7 @@ for (( i = 0; i < img_h; ++i )); do
         ray_direction=($(normalize "${ray_direction[@]}"))
 
         # Check ray-object intersection, populate isect
-        if trace "${ray_origin_world[@]}" "${ray_direction[@]}" get_isect; then
+        if trace "${ray_origin_world[@]}" "${ray_direction[@]}"; then
 
             # Ray hits an object, shade pixel with ambient shader
             rgb_colour=$(shade_ambient)
@@ -616,11 +622,14 @@ for (( i = 0; i < img_h; ++i )); do
                 else
                     # It's a point light
                     shray_direction=($(vec_diff ${light[location]} ${isect[hit_point]}))
+                    light[distance]=$(bc <<< "scale = 3
+                        sqrt(${shray_direction[0]}^2 + ${shray_direction[1]}^2 + ${shray_direction[2]}^2)")
                     shray_direction=($(normalize "${shray_direction[@]}"))
+
                 fi
 
                 # Cast shadow ray, don't populate isect
-                if ! trace $bias_hit_point "${shray_direction[@]}"; then
+                if ! trace $bias_hit_point "${shray_direction[@]}" "${light[distance]}"; then
                     rgb_colour=$(shade_diffuse "${shray_direction[@]}" ${light[col]})
                 fi
             done
