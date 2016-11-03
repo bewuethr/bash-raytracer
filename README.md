@@ -4,6 +4,24 @@ A raytracer written in Bash (except for floating point calculations, where I use
 
 ## Change log
 
+### 2016/11/02
+
+The latest changes allow for quite some variety in what can be achieved &ndash; for example a checkered plane with a single light source (suffering horribly from aliasing):
+
+![Point light source plane horizontal](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20161102a.png)
+
+The same scene seen from the top, better hiding the fact that the pixels are huge:
+
+![Point light source plane vertical](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20161102b.png)
+
+A sphere in front of a slanted plane, lit by three point light sources:
+
+![Sphere plane and 3 point lights](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20161102c.png)
+
+Or this triangle with spheres on its vertices, sitting on a plane, dimly lit by three point light sources:
+
+![Triangle and 3 spheres](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20161102d.png)
+
 ### 2016/11/01
 
 * Add option to use multiple lights instead of single light source
