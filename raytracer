@@ -95,9 +95,8 @@ init_globals () {
 
     # Add normal to objects, where possible
     # Plane already has it, sphere normal depends on hit point
-    local tri_name
-    for tri_name in "${!obj_triangle@}"; do
-        local -n triangle=$tri_name
+    local -n triangle
+    for triangle in "${!obj_triangle@}"; do
         triangle[n]="$(get_tri_normal ${triangle[p0]} ${triangle[p1]} ${triangle[p2]})"
     done
 
@@ -105,9 +104,8 @@ init_globals () {
     ray_origin=(0 0 0)
 
     # Normalize directional light direction vectors
-    local light_name
-    for light_name in "${!lt_@}"; do
-        local -n light=$light_name
+    local -n light
+    for light in "${!lt_@}"; do
         if [[ ${light[type]} == 'dir' ]]; then
             light[dir]="$(normalize "${light[dir]}")"
         fi
@@ -378,8 +376,7 @@ EOF
 # Arguments: hit point, sphere name
 get_sphere_normal () {
     local hit_point=($1 $2 $3)
-    local obj_name=$4
-    local -n sphere=$obj_name
+    local -n sphere=$4
     local c=(${sphere[origin]})
 
     bc bc_lib.bc <<EOF
@@ -407,10 +404,8 @@ shade_ambient () {
     local res_col=(0 0 0)   # Resulting colour
 
     # Loop over lights
-    local light_name
-    for light_name in "${!lt_@}"; do
-        local -n light=$light_name
-
+    local -n light
+    for light in "${!lt_@}"; do
         # Make light colour a vector
         local light_col=(${light[col]})
 
@@ -513,23 +508,23 @@ trace () {
     local d=($4 $5 $6)
     local t_min=${7:-$inf}
     local isect_flag
-    if [[ $t_min == $inf ]]; then
+    if [[ $t_min == $inf ]]; then   # Can't use (( )) because floating point
         isect_flag=1    # Populate isect
     else
         isect_flag=0    # Don't populate isect
     fi
-    local object_name nearest_object_name
+    local nearest_object_name
     local t
     local retval=1
-    for object_name in "${!obj_@}"; do
-        local -n object=$object_name
-        t=$("${object[intersect]}" "${o[@]}" "${d[@]}" "$object_name")
+    local -n object
+    for object in "${!obj_@}"; do
+        t=$("${object[intersect]}" "${o[@]}" "${d[@]}" "${!object}")
         if (( $(bc <<< "$t > 0 && $t < $t_min") )); then
             retval=0
 
             # Do we only need to know if we intersect?
             (( isect_flag == 0 )) && return 0
-            nearest_object_name=$object_name
+            nearest_object_name=${!object}
             t_min=$t
             if [[ ${object[pattern]:-none} == "checker" ]]; then
                 if (( $(bc bc_lib.bc <<< "
@@ -608,8 +603,8 @@ for (( i = 0; i < img_h; ++i )); do
             ")
 
             # Loop over lights and cast shadow rays
-            for light_name in "${!lt_@}"; do
-                declare -n light=$light_name
+            declare -n light
+            for light in "${!lt_@}"; do
 
                 # For directional lights: invert direction
                 if [[ ${light[type]} == 'dir' ]]; then
