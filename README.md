@@ -8,19 +8,19 @@ A raytracer written in Bash (except for floating point calculations, where I use
 
 The latest changes allow for quite some variety in what can be achieved &ndash; for example a checkered plane with a single light source (suffering horribly from aliasing):
 
-![Point light source plane horizontal](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20161102a.png)
+![Point light source plane horizontal](images/result20161102a.png)
 
 The same scene seen from the top, better hiding the fact that the pixels are huge:
 
-![Point light source plane vertical](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20161102b.png)
+![Point light source plane vertical](images/result20161102b.png)
 
 A sphere in front of a slanted plane, lit by three point light sources:
 
-![Sphere plane and 3 point lights](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20161102c.png)
+![Sphere plane and 3 point lights](images/result20161102c.png)
 
 Or this triangle with spheres on its vertices, sitting on a plane, dimly lit by three point light sources:
 
-![Triangle and 3 spheres](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20161102d.png)
+![Triangle and 3 spheres](images/result20161102d.png)
 
 ### 2016/11/01
 
@@ -31,7 +31,7 @@ Or this triangle with spheres on its vertices, sitting on a plane, dimly lit by 
 
 Test scene with one directional light and one point light source (notice differing levels of shadow intensity):
 
-![rendering10](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20161101.png)
+![rendering10](images/result20161101.png)
 
 ### 2016/10/25
 
@@ -44,7 +44,7 @@ Test scene with one directional light and one point light source (notice differi
 
 Colours in the shadows are now discernible and gradients look a bit smoother:
 
-![rendering9](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20161025.png)
+![rendering9](images/result20161025.png)
 
 ### 2016/10/24
 
@@ -53,7 +53,7 @@ Colours in the shadows are now discernible and gradients look a bit smoother:
 
 Because there aren't many colours available, the shadows tend to be very dark and "dark yellow" on the checkered floor becomes "pitch black":
 
-![rendering8](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20161024.png)
+![rendering8](images/result20161024.png)
 
 I plan on switching to true colour soon, which should get rid of this problem.
 
@@ -64,20 +64,20 @@ I plan on switching to true colour soon, which should get rid of this problem.
 
 Unlit parts of objects are pitch black, which doesn't look super natural:
 
-![rendering7](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20161003.png)
+![rendering7](images/result20161003.png)
 
 * Add ambient lighting to scene at 20% of intensity of light source; it's a bit much, but the RGB to terminal colour mapping results in all black otherwise (or my mapping is screwed up)
 
 Rendered image:
 
-![rendering8](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20161003a.png)
+![rendering8](images/result20161003a.png)
 
 
 ### 2016/09/16
 
 * Add incident angle shader: treat camera as light source, shade surfaces darker the smaller the incident angle of the camera ray
 
-![rendering6](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20160916.png)
+![rendering6](images/result20160916.png)
 
 ### 2016/09/10
 
@@ -86,7 +86,7 @@ Rendered image:
 
 Testing `facing_ratio` with all the colours of the last rendering, drawing 21 shades each:
 
-![facing_ratio_test](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/facing_ratio_test.png)
+![facing_ratio_test](images/facing_ratio_test.png)
 
 ### 2016/09/07
 
@@ -96,11 +96,11 @@ Testing `facing_ratio` with all the colours of the last rendering, drawing 21 sh
 
 Rendered image:
 
-![rendering5](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20160907.png)
+![rendering5](images/result20160907.png)
 
 And overlaid on top of the original scene:
 
-![rendering5whitted](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20160907_overlay.png)
+![rendering5whitted](images/result20160907_overlay.png)
 
 ### 2016/09/01
 
@@ -110,8 +110,8 @@ And overlaid on top of the original scene:
 
 Output of these two scripts: `showcolours` (left) and `rgbcolours` (right, slightly re-sized)
 
-![showcolours](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/showcolours.png)
-![rgbtest](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/rgbtest.png)
+![showcolours](images/showcolours.png)
+![rgbtest](images/rgbtest.png)
 
 ### 2016/08/30
 
@@ -121,11 +121,11 @@ Output of these two scripts: `showcolours` (left) and `rgbcolours` (right, sligh
 
 Rendered image:
 
-![rendering4](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20160830.png)
+![rendering4](images/result20160830.png)
 
 And overlaid on top of the original scene:
 
-![rendering4whitted](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20160830_overlay.png)
+![rendering4whitted](images/result20160830_overlay.png)
 
 ### 2016/07/11
 
@@ -134,11 +134,11 @@ And overlaid on top of the original scene:
 
 Rendered image:
 
-![rendering3](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20160711.png)
+![rendering3](images/result20160711.png)
 
 And overlaid on top of the original scene:
 
-![rendering3whitted](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20160711_overlay.png)
+![rendering3whitted](images/result20160711_overlay.png)
 
 ### 2016/07/02
 
@@ -152,11 +152,11 @@ And overlaid on top of the original scene:
 
 The rendered image now looks like this:
 
-![rendering2](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20160702.png)
+![rendering2](images/result20160702.png)
 
 Overlaid on top of the original Whitted scene:
 
-![rendering2whitted](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20160702_overlay.png)
+![rendering2whitted](images/result20160702_overlay.png)
 
 ### 2016/06/22
 
@@ -169,8 +169,8 @@ Overlaid on top of the original Whitted scene:
 
 The rendered image looks like this:
 
-![rendering1](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/result20160622.png)
+![rendering1](images/result20160622.png)
 
 If you think you can see an uncanny resemblance to the famous Whitted raytracer scene (minus the second sphere, the plane and all effects), you're completely right. That's what it'll become when it's grown up.
 
-![whitted](https://raw.githubusercontent.com/bewuethr/bash-raytracer/master/images/whitted.jpg)
+![whitted](images/whitted.jpg)
