@@ -3,188 +3,188 @@
 set -u
 
 # Show usage instructions
-show_help () {
-cat <<EOF
-Usage: ${0##*/} [-hf8] [-s FACTOR] [-v FOV] [-d FILE]
-Render the Whitted ray tracing scene using terminal escape codes.
+show_help() {
+	cat <<- EOF
+		Usage: ${0##*/} [-hf8] [-s FACTOR] [-v FOV] [-d FILE]
+		Render the Whitted ray tracing scene using terminal escape codes.
 
-    -h         display this help text and exit
-    -f         use the full terminal window instead of the standard 104x34
-               characters
-    -s FACTOR  shrink rendered image by factor FACTOR
-    -v FOV     use field of view FOV (in degrees) instead of the default 90
-    -d FILE    use scene description in file FILE instead of the default scene.bash
-    -8         use 8-bit colours instead of 24-bit colours
+		    -h         display this help text and exit
+		    -f         use the full terminal window instead of the standard 104x34
+		               characters
+		    -s FACTOR  shrink rendered image by factor FACTOR
+		    -v FOV     use field of view FOV (in degrees) instead of the default 90
+		    -d FILE    use scene description in file FILE instead of the default scene.bash
+		    -8         use 8-bit colours instead of 24-bit colours
 
-The -f and -s options override each other silently; the last one issued is used.
-EOF
+		The -f and -s options override each other silently; the last one issued is used.
+	EOF
 }
 
 # Global variables
-init_globals () {
-    # Constants
-    declare -rg inf=999999
-    declare -rg nolight=999998
-    # Set defaults
-    local fov=90                # Field of view
-    local shrinkage=1           # Scaling factor for image size
-    local scene='scene.bash'    # Scene file
-    bit8=0                      # Use 8-bit colours instead of 24-bit colours?
+init_globals() {
+	# Constants
+	declare -rg inf=999999
+	declare -rg nolight=999998
+	# Set defaults
+	local fov=90             # Field of view
+	local shrinkage=1        # Scaling factor for image size
+	local scene='scene.bash' # Scene file
+	bit8=0                   # Use 8-bit colours instead of 24-bit colours?
 
-    # Parse command line options
-    local opt
-    while getopts ":hv:s:fd:8" opt; do
-        case "$opt" in
-            h)
-                show_help
-                exit 0
-                ;;
-            v)
-                fov=$OPTARG
-                ;;
-            s)
-                shrinkage=$OPTARG
-                ;;
-            f)
-                shrinkage='fullscreen'
-                ;;
-            d)
-                scene=$OPTARG
-                ;;
-            8)
-                bit8=1
-                ;;
-            \?)
-                echo "Invalid option: -$OPTARG" >&2
-                show_help >&2
-                exit 1
-                ;;
-            :)
-                echo "Option -$OPTARG requires an argument." >&2
-                show_help >&2
-                exit 1
-                ;;
-        esac
-    done
+	# Parse command line options
+	local opt
+	while getopts ":hv:s:fd:8" opt; do
+		case "$opt" in
+			h)
+				show_help
+				exit 0
+				;;
+			v)
+				fov=$OPTARG
+				;;
+			s)
+				shrinkage=$OPTARG
+				;;
+			f)
+				shrinkage='fullscreen'
+				;;
+			d)
+				scene=$OPTARG
+				;;
+			8)
+				bit8=1
+				;;
+			\?)
+				echo "Invalid option: -$OPTARG" >&2
+				show_help >&2
+				exit 1
+				;;
+			:)
+				echo "Option -$OPTARG requires an argument." >&2
+				show_help >&2
+				exit 1
+				;;
+		esac
+	done
 
-    # Image dimensions
-    if [[ $shrinkage == fullscreen ]]; then
-        img_w=$(tput cols)
-        img_h=$(tput lines)
-    else
-        img_w=$(( 104 / shrinkage ))
-        img_h=$(( 34 / shrinkage ))
-    fi
+	# Image dimensions
+	if [[ $shrinkage == fullscreen ]]; then
+		img_w=$(tput cols)
+		img_h=$(tput lines)
+	else
+		img_w=$((104 / shrinkage))
+		img_h=$((34 / shrinkage))
+	fi
 
-    # Aspect ratio takes non-square pixel shape into account
-    img_ar=$(bc <<< "scale=3; ($img_w / 2) / $img_h")
+	# Aspect ratio takes non-square pixel shape into account
+	img_ar=$(bc <<< "scale=3; ($img_w / 2) / $img_h")
 
-    # Scale for field of view; pi is 4 * atan(1)
-    scale=$(bc -l <<< "scale=3; x = $fov * 2 * a(1) / 180; s(x)/c(x)")
+	# Scale for field of view; pi is 4 * atan(1)
+	scale=$(bc -l <<< "scale=3; x = $fov * 2 * a(1) / 180; s(x)/c(x)")
 
-    # Reset colour
-    reset=$(tput sgr0)
+	# Reset colour
+	reset=$(tput sgr0)
 
-    # Load scene
-    if [[ -r $scene ]]; then
-        # shellcheck source=scene.bash
-        source "$scene"
-    else
-        echo "Can't read scene description file, \"$scene\"" >&2
-        show_help >&2
-        exit 1
-    fi
+	# Load scene
+	if [[ -r $scene ]]; then
+		# shellcheck source=scene.bash
+		source "$scene"
+	else
+		echo "Can't read scene description file, \"$scene\"" >&2
+		show_help >&2
+		exit 1
+	fi
 
-    # Add normal to objects, where possible
-    # Plane already has it, sphere normal depends on hit point
-    local -n triangle
-    for triangle in "${!obj_triangle@}"; do
-        triangle[n]="$(get_tri_normal "${triangle[p0]}" "${triangle[p1]}" "${triangle[p2]}")"
-    done
+	# Add normal to objects, where possible
+	# Plane already has it, sphere normal depends on hit point
+	local -n triangle
+	for triangle in "${!obj_triangle@}"; do
+		triangle[n]="$(get_tri_normal "${triangle[p0]}" "${triangle[p1]}" "${triangle[p2]}")"
+	done
 
-    # Ray origin in camera coordinates
-    ray_origin=(0 0 0)
+	# Ray origin in camera coordinates
+	ray_origin=(0 0 0)
 
-    # Normalize directional light direction vectors
-    local -n light
-    for light in "${!lt_@}"; do
-        if [[ ${light[type]} == 'dir' ]]; then
-            # shellcheck disable=SC2154
-            light[dir]="$(normalize "${light[dir]}")"
-        fi
-    done
+	# Normalize directional light direction vectors
+	local -n light
+	for light in "${!lt_@}"; do
+		if [[ ${light[type]} == 'dir' ]]; then
+			# shellcheck disable=SC2154
+			light[dir]="$(normalize "${light[dir]}")"
+		fi
+	done
 }
 
 # Calculate normal of triangle defined by three points
-get_tri_normal () {
-    local p0
-    read -ra p0 <<< "$1"
-    local p1
-    read -ra p1 <<< "$2"
-    local p2
-    read -ra p2 <<< "$3"
+get_tri_normal() {
+	local p0
+	read -ra p0 <<< "$1"
+	local p1
+	read -ra p1 <<< "$2"
+	local p2
+	read -ra p2 <<< "$3"
 
-    bc bc_lib.bc <<EOF
-        scale = 3
+	bc bc_lib.bc <<- EOF
+		scale = 3
 
-        p0[0] = ${p0[0]}
-        p0[1] = ${p0[1]}
-        p0[2] = ${p0[2]}
-        p1[0] = ${p1[0]}
-        p1[1] = ${p1[1]}
-        p1[2] = ${p1[2]}
-        p2[0] = ${p2[0]}
-        p2[1] = ${p2[1]}
-        p2[2] = ${p2[2]}
+		p0[0] = ${p0[0]}
+		p0[1] = ${p0[1]}
+		p0[2] = ${p0[2]}
+		p1[0] = ${p1[0]}
+		p1[1] = ${p1[1]}
+		p1[2] = ${p1[2]}
+		p2[0] = ${p2[0]}
+		p2[1] = ${p2[1]}
+		p2[2] = ${p2[2]}
 
-        . = vec_diff(p1[], p0[], p0p1[])
-        . = vec_diff(p2[], p0[], p0p2[])
-        . = cross_prod(p0p1[], p0p2[], n[])
-        . = normalize(n[])
+		. = vec_diff(p1[], p0[], p0p1[])
+		. = vec_diff(p2[], p0[], p0p2[])
+		. = cross_prod(p0p1[], p0p2[], n[])
+		. = normalize(n[])
 
-        print n[0], " ", n[1], " ", n[2]
-EOF
+		print n[0], " ", n[1], " ", n[2]
+	EOF
 }
 
 # Map single RGB component (0-255) to terminal colour component (0-5)
-get_component () {
-    local comp=${1%.*}
-    if (( comp > 115 )); then
-        echo $(( (comp - 116) / 40 + 2 ))
-    elif (( comp > 47 )); then
-        echo 1
-    else
-        echo 0
-    fi
+get_component() {
+	local comp=${1%.*}
+	if ((comp > 115)); then
+		echo $(((comp - 116) / 40 + 2))
+	elif ((comp > 47)); then
+		echo 1
+	else
+		echo 0
+	fi
 }
 
 # Map RGB triple to terminal colour
-rgb_to_term () {
-    local rgbcol=("$@")
-    local rterm gterm bterm
-    rterm=$(get_component "${rgbcol[0]}")
-    gterm=$(get_component "${rgbcol[1]}")
-    bterm=$(get_component "${rgbcol[2]}")
-    echo $(( 16 + 36 * rterm + 6 * gterm + bterm ))
+rgb_to_term() {
+	local rgbcol=("$@")
+	local rterm gterm bterm
+	rterm=$(get_component "${rgbcol[0]}")
+	gterm=$(get_component "${rgbcol[1]}")
+	bterm=$(get_component "${rgbcol[2]}")
+	echo $((16 + 36 * rterm + 6 * gterm + bterm))
 }
 
 # Transform 3D vector with given matrix - assume row vector and v * M
-vec_matrix_mult () {
-    local v=("$1" "$2" "$3") # The vector
-    local -n M=$4      # The matrix
-    bc <<< "scale=3;
-        ${v[0]} * ${M[0,0]} + ${v[1]} * ${M[1,0]} + ${v[2]} * ${M[2,0]} + ${M[3,0]}
-        ${v[0]} * ${M[0,1]} + ${v[1]} * ${M[1,1]} + ${v[2]} * ${M[2,1]} + ${M[3,1]}
-        ${v[0]} * ${M[0,2]} + ${v[1]} * ${M[1,2]} + ${v[2]} * ${M[2,2]} + ${M[3,2]}"
+vec_matrix_mult() {
+	local v=("$1" "$2" "$3") # The vector
+	local -n M=$4            # The matrix
+	bc <<< "scale=3;
+        ${v[0]} * ${M[0, 0]} + ${v[1]} * ${M[1, 0]} + ${v[2]} * ${M[2, 0]} + ${M[3, 0]}
+        ${v[0]} * ${M[0, 1]} + ${v[1]} * ${M[1, 1]} + ${v[2]} * ${M[2, 1]} + ${M[3, 1]}
+        ${v[0]} * ${M[0, 2]} + ${v[1]} * ${M[1, 2]} + ${v[2]} * ${M[2, 2]} + ${M[3, 2]}"
 }
 
 # Subtract the second vector from the first vector
-vec_diff () {
-    local v1
-    read -ra v1 <<< "$1"
-    local v2
-    read -ra v2 <<< "$2"
-    bc <<< "scale=3
+vec_diff() {
+	local v1
+	read -ra v1 <<< "$1"
+	local v2
+	read -ra v2 <<< "$2"
+	bc <<< "scale=3
         ${v1[0]} - ${v2[0]}
         ${v1[1]} - ${v2[1]}
         ${v1[2]} - ${v2[2]}"
@@ -192,21 +192,21 @@ vec_diff () {
 
 # Transform x,y raster coordinates to camera coordinates
 # Image plane is one unit away from camera along negative z-axis
-raster_to_camera () {
-    local x=$1
-    local y=$2
+raster_to_camera() {
+	local x=$1
+	local y=$2
 
-    bc <<< "scale = 3
+	bc <<< "scale = 3
         (2 * ($x + 0.5) / $img_w - 1) * $img_ar * $scale
         1 - 2 * ($y + 0.5) / $img_h * $scale
         -1"
 }
 
 # Normalize argument vector to unit length
-normalize () {
-    local v
-    read -ra v <<< "$1"
-    bc <<< "scale=3; len = sqrt(${v[0]}^2 + ${v[1]}^2 + ${v[2]}^2)
+normalize() {
+	local v
+	read -ra v <<< "$1"
+	bc <<< "scale=3; len = sqrt(${v[0]}^2 + ${v[1]}^2 + ${v[2]}^2)
         print ${v[0]} / len, \" \", \
             ${v[1]} / len, \" \", \
             ${v[2]} / len"
@@ -217,309 +217,310 @@ normalize () {
 # Arguments: origin and direction of ray, variable name of object
 
 # Ray and sphere
-intersect_sphere () {
-    local o=("$1" "$2" "$3")
-    local d=("$4" "$5" "$6")
-    local -n sphere=$7
-    local c
-    read -ra c <<< "${sphere[origin]}"
-    local r=${sphere[radius]}
+intersect_sphere() {
+	local o=("$1" "$2" "$3")
+	local d=("$4" "$5" "$6")
+	local -n sphere=$7
+	local c
+	read -ra c <<< "${sphere[origin]}"
+	local r=${sphere[radius]}
 
-    bc bc_lib.bc <<EOF
-        scale = 3
+	bc bc_lib.bc <<- EOF
+		scale = 3
 
-        o[0] = ${o[0]}
-        o[1] = ${o[1]}
-        o[2] = ${o[2]}
-        d[0] = ${d[0]}
-        d[1] = ${d[1]}
-        d[2] = ${d[2]}
-        c[0] = ${c[0]}
-        c[1] = ${c[1]}
-        c[2] = ${c[2]}
-        r    = $r
+		o[0] = ${o[0]}
+		o[1] = ${o[1]}
+		o[2] = ${o[2]}
+		d[0] = ${d[0]}
+		d[1] = ${d[1]}
+		d[2] = ${d[2]}
+		c[0] = ${c[0]}
+		c[1] = ${c[1]}
+		c[2] = ${c[2]}
+		r    = $r
 
-        a = dot_prod(d[], d[])
-        b = 2 * (dot_prod(o[], d[]) - dot_prod(d[], c[]))
-        c = dot_prod(o[], o[]) + dot_prod(c[], c[]) - 2 * dot_prod(o[], c[]) - r^2
+		a = dot_prod(d[], d[])
+		b = 2 * (dot_prod(o[], d[]) - dot_prod(d[], c[]))
+		c = dot_prod(o[], o[]) + dot_prod(c[], c[]) - 2 * dot_prod(o[], c[]) - r^2
 
-        discr = b^2 - 4 * a * c
+		discr = b^2 - 4 * a * c
 
-        if (discr < 0) {
-            print -1
-        } else if (discr == 0) {
-            print -b / (2 * a)
-        } else {
-            t1 = (-b + sqrt(discr)) / (2 * a)
-            t2 = (-b - sqrt(discr)) / (2 * a)
-            print min(t1, t2)
-        }
-EOF
+		if (discr < 0) {
+			print -1
+		} else if (discr == 0) {
+			print -b / (2 * a)
+		} else {
+			t1 = (-b + sqrt(discr)) / (2 * a)
+			t2 = (-b - sqrt(discr)) / (2 * a)
+			print min(t1, t2)
+		}
+	EOF
 }
 
 # Ray and plane
-intersect_plane () {
-    local o=("$1" "$2" "$3")
-    local d=("$4" "$5" "$6")
-    local -n plane=$7
-    local p0
-    read -ra p0 <<< "${plane[p0]}"
-    local n
-    read -ra n <<< "${plane[n]}"
+intersect_plane() {
+	local o=("$1" "$2" "$3")
+	local d=("$4" "$5" "$6")
+	local -n plane=$7
+	local p0
+	read -ra p0 <<< "${plane[p0]}"
+	local n
+	read -ra n <<< "${plane[n]}"
 
-    bc bc_lib.bc <<EOF
-        scale = 3
+	bc bc_lib.bc <<- EOF
+		scale = 3
 
-        o[0]  = ${o[0]}
-        o[1]  = ${o[1]}
-        o[2]  = ${o[2]}
-        d[0]  = ${d[0]}
-        d[1]  = ${d[1]}
-        d[2]  = ${d[2]}
-        p0[0] = ${p0[0]}
-        p0[1] = ${p0[1]}
-        p0[2] = ${p0[2]}
-        n[0]  = ${n[0]}
-        n[1]  = ${n[1]}
-        n[2]  = ${n[2]}
+		o[0]  = ${o[0]}
+		o[1]  = ${o[1]}
+		o[2]  = ${o[2]}
+		d[0]  = ${d[0]}
+		d[1]  = ${d[1]}
+		d[2]  = ${d[2]}
+		p0[0] = ${p0[0]}
+		p0[1] = ${p0[1]}
+		p0[2] = ${p0[2]}
+		n[0]  = ${n[0]}
+		n[1]  = ${n[1]}
+		n[2]  = ${n[2]}
 
-        denom = dot_prod(n[], d[])
+		denom = dot_prod(n[], d[])
 
-        if (abs(denom) > 10^-6) {
-            . = vec_diff(p0[], o[], vdif[])
-            t = dot_prod(n[], vdif[]) / denom
-            if (t >= 0) {
-                print t
-            } else {
-                print -1
-            }
-        } else {
-            print -1
-        }
-EOF
+		if (abs(denom) > 10^-6) {
+			. = vec_diff(p0[], o[], vdif[])
+			t = dot_prod(n[], vdif[]) / denom
+			if (t >= 0) {
+				print t
+			} else {
+				print -1
+			}
+		} else {
+			print -1
+		}
+	EOF
 }
 
 # Ray and triangle
-intersect_triangle () {
-    local o=("$1" "$2" "$3")
-    local d=("$4" "$5" "$6")
-    # shellcheck disable=SC2178
-    local -n triangle=$7
-    local p0
-    read -ra p0 <<< "${triangle[p0]}"
-    local p1
-    read -ra p1 <<< "${triangle[p1]}"
-    local p2
-    read -ra p2 <<< "${triangle[p2]}"
-    local n
-    read -ra n <<< "${triangle[n]}"
+intersect_triangle() {
+	local o=("$1" "$2" "$3")
+	local d=("$4" "$5" "$6")
+	# shellcheck disable=SC2178
+	local -n triangle=$7
+	local p0
+	read -ra p0 <<< "${triangle[p0]}"
+	local p1
+	read -ra p1 <<< "${triangle[p1]}"
+	local p2
+	read -ra p2 <<< "${triangle[p2]}"
+	local n
+	read -ra n <<< "${triangle[n]}"
 
-    bc bc_lib.bc <<EOF
-        scale = 3
+	bc bc_lib.bc <<- EOF
+		scale = 3
 
-        o[0]  = ${o[0]}
-        o[1]  = ${o[1]}
-        o[2]  = ${o[2]}
-        d[0]  = ${d[0]}
-        d[1]  = ${d[1]}
-        d[2]  = ${d[2]}
-        p0[0] = ${p0[0]}
-        p0[1] = ${p0[1]}
-        p0[2] = ${p0[2]}
-        p1[0] = ${p1[0]}
-        p1[1] = ${p1[1]}
-        p1[2] = ${p1[2]}
-        p2[0] = ${p2[0]}
-        p2[1] = ${p2[1]}
-        p2[2] = ${p2[2]}
-        n[0]  = ${n[0]}
-        n[1]  = ${n[1]}
-        n[2]  = ${n[2]}
+		o[0]  = ${o[0]}
+		o[1]  = ${o[1]}
+		o[2]  = ${o[2]}
+		d[0]  = ${d[0]}
+		d[1]  = ${d[1]}
+		d[2]  = ${d[2]}
+		p0[0] = ${p0[0]}
+		p0[1] = ${p0[1]}
+		p0[2] = ${p0[2]}
+		p1[0] = ${p1[0]}
+		p1[1] = ${p1[1]}
+		p1[2] = ${p1[2]}
+		p2[0] = ${p2[0]}
+		p2[1] = ${p2[1]}
+		p2[2] = ${p2[2]}
+		n[0]  = ${n[0]}
+		n[1]  = ${n[1]}
+		n[2]  = ${n[2]}
 
 
-        . = vec_diff(p1[], p0[], p0p1[])
-        denom = dot_prod(n[], d[])
+		. = vec_diff(p1[], p0[], p0p1[])
+		denom = dot_prod(n[], d[])
 
-        if (abs(denom) > 10^-6) {
-            /* There is a ray-plane intersection */
-            . = vec_diff(p0[], o[], vdif[])
-            t = dot_prod(n[], vdif[]) / denom
+		if (abs(denom) > 10^-6) {
+			/* There is a ray-plane intersection */
+			. = vec_diff(p0[], o[], vdif[])
+			t = dot_prod(n[], vdif[]) / denom
 
-            if (t >= 0) {
-                /* Test if intersection point p is in triangle */
-                for (i = 0; i < 3; ++i)
-                    p[i] = o[i] + t * d[i]
+			if (t >= 0) {
+				/* Test if intersection point p is in triangle */
+				for (i = 0; i < 3; ++i)
+					p[i] = o[i] + t * d[i]
 
-                /* First edge */
-                . = vec_diff(p[], p0[], p0p[])
-                . = cross_prod(p0p1[], p0p[], cp[])
-                if (dot_prod(n[], cp[]) < 0)
-                    t = -1
+				/* First edge */
+				. = vec_diff(p[], p0[], p0p[])
+				. = cross_prod(p0p1[], p0p[], cp[])
+				if (dot_prod(n[], cp[]) < 0)
+					t = -1
 
-                /* Second edge */
-                if (t != -1) {
-                    . = vec_diff(p2[], p1[], p1p2[])
-                    . = vec_diff(p[], p1[], p1p[])
-                    . = cross_prod(p1p2[], p1p[], cp[])
-                    if (dot_prod(n[], cp[]) < 0)
-                        t = -1
-                }
+				/* Second edge */
+				if (t != -1) {
+					. = vec_diff(p2[], p1[], p1p2[])
+					. = vec_diff(p[], p1[], p1p[])
+					. = cross_prod(p1p2[], p1p[], cp[])
+					if (dot_prod(n[], cp[]) < 0)
+						t = -1
+				}
 
-                /* Third edge */
-                if (t != -1) {
-                    . = vec_diff(p0[], p2[], p2p0[])
-                    . = vec_diff(p[], p2[], p2p[])
-                    . = cross_prod(p2p0[], p2p[], cp[])
-                    if (dot_prod(n[], cp[]) < 0)
-                        t = -1
-                }
+				/* Third edge */
+				if (t != -1) {
+					. = vec_diff(p0[], p2[], p2p0[])
+					. = vec_diff(p[], p2[], p2p[])
+					. = cross_prod(p2p0[], p2p[], cp[])
+					if (dot_prod(n[], cp[]) < 0)
+						t = -1
+				}
 
-                /* The intersection point is within the triangle */
-                print t
+				/* The intersection point is within the triangle */
+				print t
 
-            } else {
-                /* Ray intersects plane behind camera */
-                print -1
-            }
+			} else {
+				/* Ray intersects plane behind camera */
+				print -1
+			}
 
-        } else {
-            /* Ray is parallel to triangle plane */
-            print -1
-        }
-EOF
+		} else {
+			/* Ray is parallel to triangle plane */
+			print -1
+		}
+	EOF
 }
 
 # Get normal at sphere hit point
 # Arguments: hit point, sphere name
-get_sphere_normal () {
-    local hit_point
-    read -ra hit_point <<< "$1"
-    local -n sphere=$2
-    local c
-    read -ra c <<< "${sphere[origin]}"
+get_sphere_normal() {
+	local hit_point
+	read -ra hit_point <<< "$1"
+	local -n sphere=$2
+	local c
+	read -ra c <<< "${sphere[origin]}"
 
-    bc bc_lib.bc <<EOF
-        scale = 3
+	bc bc_lib.bc <<- EOF
+		scale = 3
 
-        p[0]  = ${hit_point[0]}
-        p[1]  = ${hit_point[1]}
-        p[2]  = ${hit_point[2]}
-        c[0]  = ${c[0]}
-        c[1]  = ${c[1]}
-        c[2]  = ${c[2]}
+		p[0]  = ${hit_point[0]}
+		p[1]  = ${hit_point[1]}
+		p[2]  = ${hit_point[2]}
+		c[0]  = ${c[0]}
+		c[1]  = ${c[1]}
+		c[2]  = ${c[2]}
 
-        . = vec_diff(p[], c[], n[])
-        . = normalize(n[])
+		. = vec_diff(p[], c[], n[])
+		. = normalize(n[])
 
-        print n[0], " ", n[1], " ", n[2]
-EOF
+		print n[0], " ", n[1], " ", n[2]
+	EOF
 }
 
 # Ambient shading with colours from isect and lights; return RGB triple
 # Uses 5% of light colour for ambient lighting
-shade_ambient () {
-    # Make hitpoint colour a vector
-    local obj_col
-    read -ra obj_col <<< "${isect[col]}"
-    local res_col=(0 0 0)   # Resulting colour
+shade_ambient() {
+	# Make hitpoint colour a vector
+	local obj_col
+	read -ra obj_col <<< "${isect[col]}"
+	local res_col=(0 0 0) # Resulting colour
 
-    # Loop over lights
-    local -n light
-    for light in "${!lt_@}"; do
-        # Make light colour a vector
-        local light_col
-        read -ra light_col <<< "${light[col]}"
+	# Loop over lights
+	local -n light
+	for light in "${!lt_@}"; do
+		# Make light colour a vector
+		local light_col
+		read -ra light_col <<< "${light[col]}"
 
-        # Add contribution to resulting colour
-        read -ra res_col <<< "$(bc bc_lib.bc <<EOF
-            scale = 3
+		# Add contribution to resulting colour
+		read -ra res_col <<< "$(
+			bc bc_lib.bc <<- EOF
+				scale = 3
 
-            /* Current resulting colour */
-            r_res = ${res_col[0]}
-            g_res = ${res_col[1]}
-            b_res = ${res_col[2]}
+				/* Current resulting colour */
+				r_res = ${res_col[0]}
+				g_res = ${res_col[1]}
+				b_res = ${res_col[2]}
 
-            /* Colour of light */
-            lr = ${light_col[0]}
-            lg = ${light_col[1]}
-            lb = ${light_col[2]}
+				/* Colour of light */
+				lr = ${light_col[0]}
+				lg = ${light_col[1]}
+				lb = ${light_col[2]}
 
-            /* Object colour */
-            r = ${obj_col[0]}
-            g = ${obj_col[1]}
-            b = ${obj_col[2]}
+				/* Object colour */
+				r = ${obj_col[0]}
+				g = ${obj_col[1]}
+				b = ${obj_col[2]}
 
-            /* Add ambient colour contribution to resulting colour */
-            r_res += 0.05 * r / 255 * lr
-            g_res += 0.05 * g / 255 * lg
-            b_res += 0.05 * b / 255 * lb
+				/* Add ambient colour contribution to resulting colour */
+				r_res += 0.05 * r / 255 * lr
+				g_res += 0.05 * g / 255 * lg
+				b_res += 0.05 * b / 255 * lb
 
-            print r_res, " ", g_res, " ", b_res
-EOF
-        )"
-    done
+				print r_res, " ", g_res, " ", b_res
+			EOF
+		)"
+	done
 
-    echo "${res_col[@]}"
+	echo "${res_col[@]}"
 }
 
 # Diffuse shading using light direction and colour; return RGB triple
 # Add diffuse colour contribution of light
 # Arguments: light direction (shadow ray direction) and light colour
-shade_diffuse () {
-    # Make light direction and colour vectors
-    local light_dir=("$1" "$2" "$3")
-    local light_col
-    read -ra light_col <<< "$4"
+shade_diffuse() {
+	# Make light direction and colour vectors
+	local light_dir=("$1" "$2" "$3")
+	local light_col
+	read -ra light_col <<< "$4"
 
-    # Surface normal
-    local n
-    read -ra n <<< "${isect[n]}"
+	# Surface normal
+	local n
+	read -ra n <<< "${isect[n]}"
 
-    # Colour at hit point
-    local obj_col
-    read -ra obj_col <<< "${isect[col]}"
+	# Colour at hit point
+	local obj_col
+	read -ra obj_col <<< "${isect[col]}"
 
-    # Colour before this contribution
-    local cur_col
-    read -ra cur_col <<< "$rgb_colour"
+	# Colour before this contribution
+	local cur_col
+	read -ra cur_col <<< "$rgb_colour"
 
-    bc bc_lib.bc <<EOF
-        scale = 3
+	bc bc_lib.bc <<- EOF
+		scale = 3
 
-        /* Direction of light */
-        l[0] = ${light_dir[0]}
-        l[1] = ${light_dir[1]}
-        l[2] = ${light_dir[2]}
+		/* Direction of light */
+		l[0] = ${light_dir[0]}
+		l[1] = ${light_dir[1]}
+		l[2] = ${light_dir[2]}
 
-        /* Surface normal */
-        n[0] = ${n[0]}
-        n[1] = ${n[1]}
-        n[2] = ${n[2]}
+		/* Surface normal */
+		n[0] = ${n[0]}
+		n[1] = ${n[1]}
+		n[2] = ${n[2]}
 
-        /* Colour of light */
-        lr = ${light_col[0]}
-        lg = ${light_col[1]}
-        lb = ${light_col[2]}
+		/* Colour of light */
+		lr = ${light_col[0]}
+		lg = ${light_col[1]}
+		lb = ${light_col[2]}
 
-        /* Object colour */
-        r_obj = ${obj_col[0]}
-        g_obj = ${obj_col[1]}
-        b_obj = ${obj_col[2]}
+		/* Object colour */
+		r_obj = ${obj_col[0]}
+		g_obj = ${obj_col[1]}
+		b_obj = ${obj_col[2]}
 
-        /* Object ambient colour */
-        r_cur = ${cur_col[0]}
-        g_cur = ${cur_col[1]}
-        b_cur = ${cur_col[2]}
+		/* Object ambient colour */
+		r_cur = ${cur_col[0]}
+		g_cur = ${cur_col[1]}
+		b_cur = ${cur_col[2]}
 
-        lambert = max(0, dot_prod(l[], n[]))
+		lambert = max(0, dot_prod(l[], n[]))
 
-        /* Calculate resulting colour: current plus diffuse */
-        r_res = min(r_cur + r_obj/255 * lr * lambert, 255)
-        g_res = min(g_cur + g_obj/255 * lg * lambert, 255)
-        b_res = min(b_cur + b_obj/255 * lb * lambert, 255)
+		/* Calculate resulting colour: current plus diffuse */
+		r_res = min(r_cur + r_obj/255 * lr * lambert, 255)
+		g_res = min(g_cur + g_obj/255 * lg * lambert, 255)
+		b_res = min(b_cur + b_obj/255 * lb * lambert, 255)
 
-        print r_res, " ", g_res, " ", b_res
-EOF
+		print r_res, " ", g_res, " ", b_res
+	EOF
 }
 
 # Tests intersection with objects in scene
@@ -528,73 +529,73 @@ EOF
 # normal at hit point
 # If $7 is set, we have a shadow ray with a given max distance to the light source
 # Arguments: origin and direction of ray; flag to indicate if isect should be populated
-trace () {
-    local o=("$1" "$2" "$3")
-    local d=("$4" "$5" "$6")
-    local t_min=${7:-$inf}
-    local isect_flag
-    if [[ $t_min == "$inf" ]]; then   # Can't use (( )) because floating point
-        isect_flag=1    # Populate isect
-    else
-        isect_flag=0    # Don't populate isect
-    fi
-    local nearest_object_name
-    local t
-    local retval=1
-    local -n object
-    for object in "${!obj_@}"; do
-        t=$("${object[intersect]}" "${o[@]}" "${d[@]}" "${!object}")
-        if (( $(bc <<< "$t > 0 && $t < $t_min") )); then
-            retval=0
+trace() {
+	local o=("$1" "$2" "$3")
+	local d=("$4" "$5" "$6")
+	local t_min=${7:-$inf}
+	local isect_flag
+	if [[ $t_min == "$inf" ]]; then # Can't use (( )) because floating point
+		isect_flag=1                   # Populate isect
+	else
+		isect_flag=0 # Don't populate isect
+	fi
+	local nearest_object_name
+	local t
+	local retval=1
+	local -n object
+	for object in "${!obj_@}"; do
+		t=$("${object[intersect]}" "${o[@]}" "${d[@]}" "${!object}")
+		if (($(bc <<< "$t > 0 && $t < $t_min"))); then
+			retval=0
 
-            # Do we only need to know if we intersect?
-            (( isect_flag == 0 )) && return 0
-            nearest_object_name=${!object}
-            t_min=$t
-            if [[ ${object[pattern]:-none} == "checker" ]]; then
-                if (( $(bc bc_lib.bc <<< "
+			# Do we only need to know if we intersect?
+			((isect_flag == 0)) && return 0
+			nearest_object_name=${!object}
+			t_min=$t
+			if [[ ${object[pattern]:-none} == "checker" ]]; then
+				if (($(bc bc_lib.bc <<< "
                     scale = 3
                     x = ${o[0]} + $t * ${d[0]}
                     y = ${o[1]} + $t * ${d[1]}
                     scale = 0
                     (floor(x) + floor(y)) % 2 == 0
-                ") )); then
-                    isect[col]="${object[col1]}"
-                else
-                    isect[col]="${object[col2]}"
-                fi
-            else
-                isect[col]="${object[col]}"
-            fi
-        fi
-    done
+                "))); then
+					isect[col]="${object[col1]}"
+				else
+					isect[col]="${object[col2]}"
+				fi
+			else
+				isect[col]="${object[col]}"
+			fi
+		fi
+	done
 
-    # We hit something and have to populate isect
-    if (( retval == 0 )); then
-        local -n nearest_object=$nearest_object_name
+	# We hit something and have to populate isect
+	if ((retval == 0)); then
+		local -n nearest_object=$nearest_object_name
 
-        # Calculate hit point
-        isect[hit_point]=$(bc <<< "
+		# Calculate hit point
+		isect[hit_point]=$(bc <<< "
             scale = 3
             print ${o[0]} + $t_min * ${d[0]}, \" \", \
                 ${o[1]} + $t_min * ${d[1]}, \" \", \
                 ${o[2]} + $t_min * ${d[2]}
         ")
 
-        # Get normal at hit point
-        case $nearest_object_name in
-            *plane* | *triangle*)
-                isect[n]=${nearest_object[n]}
-                ;;
-            *sphere*)
-                isect[n]=$(get_sphere_normal "${isect[hit_point]}" "$nearest_object_name")
-                ;;
-            *)
-                echo "Illegal object name $nearest_object_name" >&2
-                ;;
-        esac
-    fi
-    return $retval
+		# Get normal at hit point
+		case $nearest_object_name in
+			*plane* | *triangle*)
+				isect[n]=${nearest_object[n]}
+				;;
+			*sphere*)
+				isect[n]=$(get_sphere_normal "${isect[hit_point]}" "$nearest_object_name")
+				;;
+			*)
+				echo "Illegal object name $nearest_object_name" >&2
+				;;
+		esac
+	fi
+	return $retval
 }
 
 # Read command line options and initialize global variables
@@ -603,38 +604,38 @@ init_globals "$@"
 readarray -t ray_origin_world <<< "$(vec_matrix_mult "${ray_origin[@]}" cam_to_world)"
 
 # Global loop
-for (( i = 0; i < img_h; ++i )); do
-    for (( j = 0; j < img_w; ++j )); do
-        declare -A isect=([col]="$bg_col")
-        readarray -t ray_p_cam <<< "$(raster_to_camera "$j" "$i")"
-        readarray -t ray_p_world <<< "$(vec_matrix_mult "${ray_p_cam[@]}" cam_to_world)"
-        readarray -t ray_direction <<< "$(vec_diff "${ray_p_world[*]}" "${ray_origin_world[*]}")"
-        read -ra ray_direction <<< "$(normalize "${ray_direction[*]}")"
+for ((i = 0; i < img_h; ++i)); do
+	for ((j = 0; j < img_w; ++j)); do
+		declare -A isect=([col]="$bg_col")
+		readarray -t ray_p_cam <<< "$(raster_to_camera "$j" "$i")"
+		readarray -t ray_p_world <<< "$(vec_matrix_mult "${ray_p_cam[@]}" cam_to_world)"
+		readarray -t ray_direction <<< "$(vec_diff "${ray_p_world[*]}" "${ray_origin_world[*]}")"
+		read -ra ray_direction <<< "$(normalize "${ray_direction[*]}")"
 
-        # Check ray-object intersection, populate isect
-        if trace "${ray_origin_world[@]}" "${ray_direction[@]}"; then
+		# Check ray-object intersection, populate isect
+		if trace "${ray_origin_world[@]}" "${ray_direction[@]}"; then
 
-            # Ray hits an object, shade pixel with ambient shader
-            rgb_colour=$(shade_ambient)
+			# Ray hits an object, shade pixel with ambient shader
+			rgb_colour=$(shade_ambient)
 
-            # Add bias to hitpoint to avoid self-intersection
-            read -ra hit_point <<< "${isect[hit_point]}"
-            read -ra n <<< "${isect[n]}"
-            read -ra bias_hit_point <<< "$(bc <<< "
+			# Add bias to hitpoint to avoid self-intersection
+			read -ra hit_point <<< "${isect[hit_point]}"
+			read -ra n <<< "${isect[n]}"
+			read -ra bias_hit_point <<< "$(bc <<< "
                 scale = 3
                 print ${hit_point[0]} + 0.008 * ${n[0]}, \" \", \
                     ${hit_point[1]} + 0.008 * ${n[1]}, \" \", \
                     ${hit_point[2]} + 0.008 * ${n[2]}
             ")"
 
-            # Loop over lights and cast shadow rays
-            declare -n light
-            for light in "${!lt_@}"; do
+			# Loop over lights and cast shadow rays
+			declare -n light
+			for light in "${!lt_@}"; do
 
-                # For directional lights: invert direction
-                if [[ ${light[type]} == 'dir' ]]; then
-                    read -ra shray_direction <<< "${light[dir]}"
-                    read -ra shray_direction <<< "$(bc bc_lib.bc <<< "
+				# For directional lights: invert direction
+				if [[ ${light[type]} == 'dir' ]]; then
+					read -ra shray_direction <<< "${light[dir]}"
+					read -ra shray_direction <<< "$(bc bc_lib.bc <<< "
                         scale = 3
                         v[0] = ${shray_direction[0]}
                         v[1] = ${shray_direction[1]}
@@ -642,32 +643,32 @@ for (( i = 0; i < img_h; ++i )); do
                         . = invert(v[])
                         print v[0], \" \", v[1], \" \", v[2]
                     ")"
-                else
-                    # It's a point light
-                    readarray -t shray_direction <<< "$(vec_diff "${light[location]}" "${isect[hit_point]}")"
-                    # shellcheck disable=SC2154
-                    light[distance]=$(bc <<< "scale = 3
+				else
+					# It's a point light
+					readarray -t shray_direction <<< "$(vec_diff "${light[location]}" "${isect[hit_point]}")"
+					# shellcheck disable=SC2154
+					light[distance]=$(bc <<< "scale = 3
                         sqrt(${shray_direction[0]}^2 + ${shray_direction[1]}^2 + ${shray_direction[2]}^2)")
-                    read -ra shray_direction <<< "$(normalize "${shray_direction[*]}")"
+					read -ra shray_direction <<< "$(normalize "${shray_direction[*]}")"
 
-                fi
+				fi
 
-                # Cast shadow ray, don't populate isect
-                if ! trace "${bias_hit_point[@]}" "${shray_direction[@]}" "${light[distance]:-$nolight}"; then
-                    rgb_colour=$(shade_diffuse "${shray_direction[@]}" "${light[col]}")
-                fi
-            done
-        else
-            # Ray doesn't hit any object
-            rgb_colour=$bg_col
-        fi
-        if (( bit8 == 0 )); then
-            read -ra rgb <<< "$rgb_colour"
-            printf -v colour "\e[48;2;%.0f;%.0f;%0.fm" "${rgb[@]}"
-        else
-            colour=$(tput setab "$(rgb_to_term "$rgb_colour")")
-        fi
-        printf "%b" "$colour $reset"
-    done
-    echo
+				# Cast shadow ray, don't populate isect
+				if ! trace "${bias_hit_point[@]}" "${shray_direction[@]}" "${light[distance]:-$nolight}"; then
+					rgb_colour=$(shade_diffuse "${shray_direction[@]}" "${light[col]}")
+				fi
+			done
+		else
+			# Ray doesn't hit any object
+			rgb_colour=$bg_col
+		fi
+		if ((bit8 == 0)); then
+			read -ra rgb <<< "$rgb_colour"
+			printf -v colour "\e[48;2;%.0f;%.0f;%0.fm" "${rgb[@]}"
+		else
+			colour=$(tput setab "$(rgb_to_term "$rgb_colour")")
+		fi
+		printf "%b" "$colour $reset"
+	done
+	echo
 done
