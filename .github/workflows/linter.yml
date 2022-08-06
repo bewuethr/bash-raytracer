@@ -11,3 +11,5 @@ jobs:
   lint:
     name: Lint code base
     uses: bewuethr/workflows/.github/workflows/linter.yml@main
+    with:
+      filter-regex-exclude: images/.*
