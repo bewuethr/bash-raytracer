@@ -1,9 +1,12 @@
 # Bash Raytracer
 
 [![Lint code base][lbadge]][lwf]
+[![Add issues to project][ibadge]][iwf]
 
 [lbadge]: <https://github.com/bewuethr/bash-raytracer/actions/workflows/linter.yml/badge.svg>
-[lwf]: <<https://github.com/bewuethr/bash-raytracer/actions/workflows/linter.yml>
+[lwf]: <https://github.com/bewuethr/bash-raytracer/actions/workflows/linter.yml>
+[ibadge]: <https://github.com/bewuethr/bash-raytracer/actions/workflows/addtoproject.yml/badge.svg>
+[iwf]: <https://github.com/bewuethr/bash-raytracer/actions/workflows/addtoproject.yml>
 
 A raytracer written in Bash (except for floating point calculations, where I
 use `bc`). It requires a terminal emulator capable of displaying 256 colours
