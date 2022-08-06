@@ -1,107 +1,107 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Display squares with all terminal colours
 
 for i in {0..5}; do
-    idx1=$(( 16 + i ))
-    idx2=$(( 82 + i ))
-    for j in {1..2}; do
-        for k in {0..5}; do
-            val=$((idx1 + k*6))
-            pval='    '
-            (( j == 2 )) && printf -v pval " %03d" $val
-            echo -en "$(tput setab $val)$(tput setaf 16)$pval"
-        done
-        for k in {0..5}; do
-            val=$((idx2 - k*6))
-            pval='    '
-            (( j == 2 )) && printf -v pval " %03d" $val
-            echo -en "$(tput setab $val)$pval"
-        done
-        tput setab 8
-        echo
-    done
+	idx1=$((16 + i))
+	idx2=$((82 + i))
+	for j in {1..2}; do
+		for k in {0..5}; do
+			val=$((idx1 + k * 6))
+			pval='    '
+			((j == 2)) && printf -v pval " %03d" $val
+			echo -en "$(tput setab $val)$(tput setaf 16)$pval"
+		done
+		for k in {0..5}; do
+			val=$((idx2 - k * 6))
+			pval='    '
+			((j == 2)) && printf -v pval " %03d" $val
+			echo -en "$(tput setab $val)$pval"
+		done
+		tput setab 8
+		echo
+	done
 done
 
 for i in {0..5}; do
-    idx1=$(( 93 - i ))
-    idx2=$(( 159 - i ))
-    for j in {1..2}; do
-        for k in {0..5}; do
-            val=$((idx1 + k*6))
-            pval='    '
-            (( j == 2 )) && printf -v pval " %03d" $val
-            echo -en "$(tput setab $val)$pval"
-        done
-        for k in {0..5}; do
-            val=$((idx2 - k*6))
-            pval='    '
-            (( j == 2 )) && printf -v pval " %03d" $val
-            echo -en "$(tput setab $val)$pval"
-        done
-        tput setab 8
-        echo
-    done
+	idx1=$((93 - i))
+	idx2=$((159 - i))
+	for j in {1..2}; do
+		for k in {0..5}; do
+			val=$((idx1 + k * 6))
+			pval='    '
+			((j == 2)) && printf -v pval " %03d" $val
+			echo -en "$(tput setab $val)$pval"
+		done
+		for k in {0..5}; do
+			val=$((idx2 - k * 6))
+			pval='    '
+			((j == 2)) && printf -v pval " %03d" $val
+			echo -en "$(tput setab $val)$pval"
+		done
+		tput setab 8
+		echo
+	done
 done
 
 for i in {0..5}; do
-    idx1=$(( 160 + i ))
-    idx2=$(( 226 + i ))
-    for j in {1..2}; do
-        for k in {0..5}; do
-            val=$((idx1 + k*6))
-            pval='    '
-            (( j == 2 )) && printf -v pval " %03d" $val
-            echo -en "$(tput setab $val)$pval"
-        done
-        for k in {0..5}; do
-            val=$((idx2 - k*6))
-            pval='    '
-            (( j == 2 )) && printf -v pval " %03d" $val
-            echo -en "$(tput setab $val)$pval"
-        done
-        tput setab 8
-        echo
-    done
+	idx1=$((160 + i))
+	idx2=$((226 + i))
+	for j in {1..2}; do
+		for k in {0..5}; do
+			val=$((idx1 + k * 6))
+			pval='    '
+			((j == 2)) && printf -v pval " %03d" $val
+			echo -en "$(tput setab $val)$pval"
+		done
+		for k in {0..5}; do
+			val=$((idx2 - k * 6))
+			pval='    '
+			((j == 2)) && printf -v pval " %03d" $val
+			echo -en "$(tput setab $val)$pval"
+		done
+		tput setab 8
+		echo
+	done
 done
 
 for i in {1..2}; do
-    for j in {232..243}; do
-        pval='    '
-        (( i == 2 )) && printf -v pval " %03d" $j
-        echo -en "$(tput setab $j)$pval"
-    done
-    tput setab 8
-    echo
+	for j in {232..243}; do
+		pval='    '
+		((i == 2)) && printf -v pval " %03d" "$j"
+		echo -en "$(tput setab "$j")$pval"
+	done
+	tput setab 8
+	echo
 done
 
 for i in {1..2}; do
-    for j in {255..244}; do
-        pval='    '
-        (( i == 2 )) && printf -v pval " %03d" $j
-        echo -en "$(tput setab $j)$pval"
-    done
-    tput setab 8
-    echo
+	for j in {255..244}; do
+		pval='    '
+		((i == 2)) && printf -v pval " %03d" "$j"
+		echo -en "$(tput setab "$j")$pval"
+	done
+	tput setab 8
+	echo
 done
 
 for i in {1..2}; do
-    for j in {0..7}; do
-        pval='    '
-        (( i == 2 )) && printf -v pval " %03d" $j
-        echo -en "$(tput setab $j)$pval"
-    done
-    tput setab 8
-    echo
+	for j in {0..7}; do
+		pval='    '
+		((i == 2)) && printf -v pval " %03d" "$j"
+		echo -en "$(tput setab "$j")$pval"
+	done
+	tput setab 8
+	echo
 done
 
 for i in {1..2}; do
-    for j in {8..15}; do
-        pval='    '
-        (( i == 2 )) && printf -v pval " %03d" $j
-        echo -en "$(tput setab $j)$pval"
-    done
-    tput setab 8
-    echo
+	for j in {8..15}; do
+		pval='    '
+		((i == 2)) && printf -v pval " %03d" "$j"
+		echo -en "$(tput setab "$j")$pval"
+	done
+	tput setab 8
+	echo
 done
 tput sgr0

@@ -1,5 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
+# shellcheck disable=SC2016
 sed -i '/^[^ ]\+ () {/a\
-    echo "Entering $FUNCNAME" >&2 # DEBUG
+	echo "Entering $FUNCNAME" >&2 # DEBUG
 ' raytracer
