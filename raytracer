@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 set -u
 
 # Show usage instructions
@@ -86,6 +87,7 @@ init_globals () {
 
     # Load scene
     if [[ -r $scene ]]; then
+        # shellcheck source=scene.bash
         source "$scene"
     else
         echo "Can't read scene description file, \"$scene\"" >&2
@@ -97,7 +99,7 @@ init_globals () {
     # Plane already has it, sphere normal depends on hit point
     local -n triangle
     for triangle in "${!obj_triangle@}"; do
-        triangle[n]="$(get_tri_normal ${triangle[p0]} ${triangle[p1]} ${triangle[p2]})"
+        triangle[n]="$(get_tri_normal "${triangle[p0]}" "${triangle[p1]}" "${triangle[p2]}")"
     done
 
     # Ray origin in camera coordinates
@@ -107,6 +109,7 @@ init_globals () {
     local -n light
     for light in "${!lt_@}"; do
         if [[ ${light[type]} == 'dir' ]]; then
+            # shellcheck disable=SC2154
             light[dir]="$(normalize "${light[dir]}")"
         fi
     done
@@ -114,9 +117,12 @@ init_globals () {
 
 # Calculate normal of triangle defined by three points
 get_tri_normal () {
-    local p0=($1 $2 $3)
-    local p1=($4 $5 $6)
-    local p2=($7 $8 $9)
+    local p0
+    read -ra p0 <<< "$1"
+    local p1
+    read -ra p1 <<< "$2"
+    local p2
+    read -ra p2 <<< "$3"
 
     bc bc_lib.bc <<EOF
         scale = 3
@@ -154,7 +160,7 @@ get_component () {
 
 # Map RGB triple to terminal colour
 rgb_to_term () {
-    local rgbcol=($@)
+    local rgbcol=("$@")
     local rterm gterm bterm
     rterm=$(get_component "${rgbcol[0]}")
     gterm=$(get_component "${rgbcol[1]}")
@@ -164,7 +170,7 @@ rgb_to_term () {
 
 # Transform 3D vector with given matrix - assume row vector and v * M
 vec_matrix_mult () {
-    local v=($1 $2 $3) # The vector
+    local v=("$1" "$2" "$3") # The vector
     local -n M=$4      # The matrix
     bc <<< "scale=3;
         ${v[0]} * ${M[0,0]} + ${v[1]} * ${M[1,0]} + ${v[2]} * ${M[2,0]} + ${M[3,0]}
@@ -174,8 +180,10 @@ vec_matrix_mult () {
 
 # Subtract the second vector from the first vector
 vec_diff () {
-    local v1=($1 $2 $3)
-    local v2=($4 $5 $6)
+    local v1
+    read -ra v1 <<< "$1"
+    local v2
+    read -ra v2 <<< "$2"
     bc <<< "scale=3
         ${v1[0]} - ${v2[0]}
         ${v1[1]} - ${v2[1]}
@@ -196,11 +204,12 @@ raster_to_camera () {
 
 # Normalize argument vector to unit length
 normalize () {
-    local v=($@)
+    local v
+    read -ra v <<< "$1"
     bc <<< "scale=3; len = sqrt(${v[0]}^2 + ${v[1]}^2 + ${v[2]}^2)
-        ${v[0]} / len
-        ${v[1]} / len
-        ${v[2]} / len"
+        print ${v[0]} / len, \" \", \
+            ${v[1]} / len, \" \", \
+            ${v[2]} / len"
 }
 
 # Intersection functions
@@ -209,10 +218,11 @@ normalize () {
 
 # Ray and sphere
 intersect_sphere () {
-    local o=($1 $2 $3)
-    local d=($4 $5 $6)
+    local o=("$1" "$2" "$3")
+    local d=("$4" "$5" "$6")
     local -n sphere=$7
-    local c=(${sphere[origin]})
+    local c
+    read -ra c <<< "${sphere[origin]}"
     local r=${sphere[radius]}
 
     bc bc_lib.bc <<EOF
@@ -249,11 +259,13 @@ EOF
 
 # Ray and plane
 intersect_plane () {
-    local o=($1 $2 $3)
-    local d=($4 $5 $6)
+    local o=("$1" "$2" "$3")
+    local d=("$4" "$5" "$6")
     local -n plane=$7
-    local p0=(${plane[p0]})
-    local n=(${plane[n]})
+    local p0
+    read -ra p0 <<< "${plane[p0]}"
+    local n
+    read -ra n <<< "${plane[n]}"
 
     bc bc_lib.bc <<EOF
         scale = 3
@@ -289,13 +301,18 @@ EOF
 
 # Ray and triangle
 intersect_triangle () {
-    local o=($1 $2 $3)
-    local d=($4 $5 $6)
+    local o=("$1" "$2" "$3")
+    local d=("$4" "$5" "$6")
+    # shellcheck disable=SC2178
     local -n triangle=$7
-    local p0=(${triangle[p0]})
-    local p1=(${triangle[p1]})
-    local p2=(${triangle[p2]})
-    local n=(${triangle[n]})
+    local p0
+    read -ra p0 <<< "${triangle[p0]}"
+    local p1
+    read -ra p1 <<< "${triangle[p1]}"
+    local p2
+    read -ra p2 <<< "${triangle[p2]}"
+    local n
+    read -ra n <<< "${triangle[n]}"
 
     bc bc_lib.bc <<EOF
         scale = 3
@@ -375,9 +392,11 @@ EOF
 # Get normal at sphere hit point
 # Arguments: hit point, sphere name
 get_sphere_normal () {
-    local hit_point=($1 $2 $3)
-    local -n sphere=$4
-    local c=(${sphere[origin]})
+    local hit_point
+    read -ra hit_point <<< "$1"
+    local -n sphere=$2
+    local c
+    read -ra c <<< "${sphere[origin]}"
 
     bc bc_lib.bc <<EOF
         scale = 3
@@ -400,17 +419,19 @@ EOF
 # Uses 5% of light colour for ambient lighting
 shade_ambient () {
     # Make hitpoint colour a vector
-    local obj_col=(${isect[col]})
+    local obj_col
+    read -ra obj_col <<< "${isect[col]}"
     local res_col=(0 0 0)   # Resulting colour
 
     # Loop over lights
     local -n light
     for light in "${!lt_@}"; do
         # Make light colour a vector
-        local light_col=(${light[col]})
+        local light_col
+        read -ra light_col <<< "${light[col]}"
 
         # Add contribution to resulting colour
-        res_col=($(bc bc_lib.bc <<EOF
+        read -ra res_col <<< "$(bc bc_lib.bc <<EOF
             scale = 3
 
             /* Current resulting colour */
@@ -435,7 +456,7 @@ shade_ambient () {
 
             print r_res, " ", g_res, " ", b_res
 EOF
-        ))
+        )"
     done
 
     echo "${res_col[@]}"
@@ -446,17 +467,21 @@ EOF
 # Arguments: light direction (shadow ray direction) and light colour
 shade_diffuse () {
     # Make light direction and colour vectors
-    local light_dir=($1 $2 $3)
-    local light_col=($4 $5 $6)
+    local light_dir=("$1" "$2" "$3")
+    local light_col
+    read -ra light_col <<< "$4"
 
     # Surface normal
-    local n=(${isect[n]})
+    local n
+    read -ra n <<< "${isect[n]}"
 
     # Colour at hit point
-    local obj_col=(${isect[col]})
+    local obj_col
+    read -ra obj_col <<< "${isect[col]}"
 
     # Colour before this contribution
-    local cur_col=($rgb_colour)
+    local cur_col
+    read -ra cur_col <<< "$rgb_colour"
 
     bc bc_lib.bc <<EOF
         scale = 3
@@ -504,11 +529,11 @@ EOF
 # If $7 is set, we have a shadow ray with a given max distance to the light source
 # Arguments: origin and direction of ray; flag to indicate if isect should be populated
 trace () {
-    local o=($1 $2 $3)
-    local d=($4 $5 $6)
+    local o=("$1" "$2" "$3")
+    local d=("$4" "$5" "$6")
     local t_min=${7:-$inf}
     local isect_flag
-    if [[ $t_min == $inf ]]; then   # Can't use (( )) because floating point
+    if [[ $t_min == "$inf" ]]; then   # Can't use (( )) because floating point
         isect_flag=1    # Populate isect
     else
         isect_flag=0    # Don't populate isect
@@ -562,7 +587,7 @@ trace () {
                 isect[n]=${nearest_object[n]}
                 ;;
             *sphere*)
-                isect[n]=$(get_sphere_normal ${isect[hit_point]} "$nearest_object_name")
+                isect[n]=$(get_sphere_normal "${isect[hit_point]}" "$nearest_object_name")
                 ;;
             *)
                 echo "Illegal object name $nearest_object_name" >&2
@@ -575,16 +600,16 @@ trace () {
 # Read command line options and initialize global variables
 init_globals "$@"
 
-ray_origin_world=($(vec_matrix_mult "${ray_origin[@]}" cam_to_world))
+readarray -t ray_origin_world <<< "$(vec_matrix_mult "${ray_origin[@]}" cam_to_world)"
 
 # Global loop
 for (( i = 0; i < img_h; ++i )); do
     for (( j = 0; j < img_w; ++j )); do
         declare -A isect=([col]="$bg_col")
-        ray_p_cam=($(raster_to_camera $j $i))
-        ray_p_world=($(vec_matrix_mult "${ray_p_cam[@]}" cam_to_world))
-        ray_direction=($(vec_diff "${ray_p_world[@]}" "${ray_origin_world[@]}"))
-        ray_direction=($(normalize "${ray_direction[@]}"))
+        readarray -t ray_p_cam <<< "$(raster_to_camera "$j" "$i")"
+        readarray -t ray_p_world <<< "$(vec_matrix_mult "${ray_p_cam[@]}" cam_to_world)"
+        readarray -t ray_direction <<< "$(vec_diff "${ray_p_world[*]}" "${ray_origin_world[*]}")"
+        read -ra ray_direction <<< "$(normalize "${ray_direction[*]}")"
 
         # Check ray-object intersection, populate isect
         if trace "${ray_origin_world[@]}" "${ray_direction[@]}"; then
@@ -593,14 +618,14 @@ for (( i = 0; i < img_h; ++i )); do
             rgb_colour=$(shade_ambient)
 
             # Add bias to hitpoint to avoid self-intersection
-            hit_point=(${isect[hit_point]})
-            n=(${isect[n]})
-            bias_hit_point=$(bc <<< "
+            read -ra hit_point <<< "${isect[hit_point]}"
+            read -ra n <<< "${isect[n]}"
+            read -ra bias_hit_point <<< "$(bc <<< "
                 scale = 3
                 print ${hit_point[0]} + 0.008 * ${n[0]}, \" \", \
                     ${hit_point[1]} + 0.008 * ${n[1]}, \" \", \
                     ${hit_point[2]} + 0.008 * ${n[2]}
-            ")
+            ")"
 
             # Loop over lights and cast shadow rays
             declare -n light
@@ -608,27 +633,28 @@ for (( i = 0; i < img_h; ++i )); do
 
                 # For directional lights: invert direction
                 if [[ ${light[type]} == 'dir' ]]; then
-                    shray_direction=(${light[dir]})
-                    shray_direction=($(bc bc_lib.bc <<< "
+                    read -ra shray_direction <<< "${light[dir]}"
+                    read -ra shray_direction <<< "$(bc bc_lib.bc <<< "
                         scale = 3
                         v[0] = ${shray_direction[0]}
                         v[1] = ${shray_direction[1]}
                         v[2] = ${shray_direction[2]}
                         . = invert(v[])
                         print v[0], \" \", v[1], \" \", v[2]
-                    "))
+                    ")"
                 else
                     # It's a point light
-                    shray_direction=($(vec_diff ${light[location]} ${isect[hit_point]}))
+                    readarray -t shray_direction <<< "$(vec_diff "${light[location]}" "${isect[hit_point]}")"
+                    # shellcheck disable=SC2154
                     light[distance]=$(bc <<< "scale = 3
                         sqrt(${shray_direction[0]}^2 + ${shray_direction[1]}^2 + ${shray_direction[2]}^2)")
-                    shray_direction=($(normalize "${shray_direction[@]}"))
+                    read -ra shray_direction <<< "$(normalize "${shray_direction[*]}")"
 
                 fi
 
                 # Cast shadow ray, don't populate isect
-                if ! trace $bias_hit_point "${shray_direction[@]}" "${light[distance]:-$nolight}"; then
-                    rgb_colour=$(shade_diffuse "${shray_direction[@]}" ${light[col]})
+                if ! trace "${bias_hit_point[@]}" "${shray_direction[@]}" "${light[distance]:-$nolight}"; then
+                    rgb_colour=$(shade_diffuse "${shray_direction[@]}" "${light[col]}")
                 fi
             done
         else
@@ -636,7 +662,8 @@ for (( i = 0; i < img_h; ++i )); do
             rgb_colour=$bg_col
         fi
         if (( bit8 == 0 )); then
-            printf -v colour "\e[48;2;%.0f;%.0f;%0.fm" $rgb_colour
+            read -ra rgb <<< "$rgb_colour"
+            printf -v colour "\e[48;2;%.0f;%.0f;%0.fm" "${rgb[@]}"
         else
             colour=$(tput setab "$(rgb_to_term "$rgb_colour")")
         fi
