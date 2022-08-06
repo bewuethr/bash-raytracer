@@ -1,5 +1,10 @@
 # Bash Raytracer
 
+[![Lint code base][lbadge]][lwf]
+
+[lbadge]: <https://github.com/bewuethr/bash-raytracer/actions/workflows/linter.yml/badge.svg>
+[lwf]: <<https://github.com/bewuethr/bash-raytracer/actions/workflows/linter.yml>
+
 A raytracer written in Bash (except for floating point calculations, where I
 use `bc`). It requires a terminal emulator capable of displaying 256 colours
 (using the `-8` option) or true colour.
