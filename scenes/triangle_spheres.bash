@@ -1,3 +1,4 @@
+# shellcheck disable=SC2034
 # Plane with triangle, three spheres and two rather dim point light sources
 # Background colour
 bg_col="55 163 212"

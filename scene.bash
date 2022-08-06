@@ -1,3 +1,4 @@
+# shellcheck disable=SC2034
 # Background colour
 bg_col="55 163 212"
 

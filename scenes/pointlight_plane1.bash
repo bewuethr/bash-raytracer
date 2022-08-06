@@ -1,3 +1,4 @@
+# shellcheck disable=SC2034
 # Single point light source on vertical plane
 # Background colour
 bg_col="55 163 212"
